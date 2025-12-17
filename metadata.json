@@ -1,0 +1,8 @@
+{
+  "name": "DNIPETS web",
+  "description": "La plataforma de identidad digital y cuidado inteligente para mascotas. Versión Beta.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
