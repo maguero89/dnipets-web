@@ -1,9 +1,5 @@
 import React from 'react';
-import { Instagram, ExternalLink, Info, Clock, ShieldAlert } from 'lucide-react';
-
-interface LandingPageProps {
-  onEnterApp: () => void;
-}
+import { Instagram, Clock, ShieldAlert } from 'lucide-react';
 
 const BrandPaw = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className}>
@@ -21,7 +17,11 @@ const BrandPaw = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
+const MessageCircleIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+);
+
+const LandingPage: React.FC = () => {
   const instagramUrl = "https://www.instagram.com/DniPets.ok";
 
   return (
@@ -83,14 +83,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
           </div>
         </div>
 
-        {/* Access Button (Secondary) */}
-        <button 
-          onClick={onEnterApp}
-          className="text-slate-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 opacity-50 hover:opacity-100"
-        >
-          Explorar prototipo preliminar <ExternalLink className="w-3 h-3" />
-        </button>
-
         {/* Footer */}
         <footer className="mt-4 text-center">
             <p className="text-slate-700 text-[9px] uppercase tracking-[0.2em] font-black">
@@ -101,9 +93,5 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
     </div>
   );
 };
-
-const MessageCircleIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
-);
 
 export default LandingPage;
