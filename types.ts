@@ -73,5 +73,5 @@ export interface HealthRecord {
 export interface ImageGenerationResult {
   url: string;
   prompt: string;
-  createdAt: number;
+  timestamp: number; // <--- AQUÍ ESTABA LA DIFERENCIA (Antes decía createdAt)
 }
