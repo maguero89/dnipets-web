@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image as ImageIcon, Loader2, Bot, User, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
-import { Message } from '../types';
+// CORRECCIÓN 1: Usamos la librería estándar
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Message } from '../types'; // Asegúrate de que esto exista en types.ts
 
+// --- LOGO DE LA HUELLA ---
 const BrandPaw = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className}>
     <circle cx="20" cy="38" r="12" fill="#00D1C6"/>
@@ -20,12 +22,16 @@ const BrandPaw = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const XIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+);
+
 const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'model',
-      text: "¡Hola! Soy tu asistente de DNIPETS. ¿En qué puedo ayudarte hoy con tu mascota? Puedo darte consejos sobre alimentación, salud o identificar razas mediante fotos.",
+      text: "¡Hola! Soy tu asistente de DNIPETS. 🐾 ¿En qué puedo ayudarte hoy? Puedo darte consejos sobre alimentación, salud o identificar razas si me subes una foto.",
       timestamp: Date.now()
     }
   ]);
@@ -65,9 +71,20 @@ const ChatInterface: React.FC = () => {
     ]);
   };
 
+  // Función auxiliar para convertir base64 a formato compatible con Gemini
+  const fileToGenerativePart = (base64Data: string, mimeType: string) => {
+    return {
+      inlineData: {
+        data: base64Data.split(',')[1],
+        mimeType
+      },
+    };
+  };
+
   const handleSend = async () => {
     if ((!input.trim() && !selectedImage) || isLoading) return;
 
+    // 1. Mostrar mensaje del usuario
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -78,63 +95,57 @@ const ChatInterface: React.FC = () => {
 
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-    const currentImage = selectedImage; // capture for closure
+    const currentImage = selectedImage;
     setSelectedImage(null);
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const modelId = 'gemini-2.5-flash'; 
+      // CORRECCIÓN 2: Usar variable de entorno VITE_
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       
-      let contents: any;
-
-      if (currentImage) {
-        const base64Data = currentImage.split(',')[1];
-        const mimeType = currentImage.split(';')[0].split(':')[1];
-        
-        contents = {
-            parts: [
-                { text: input || "Analiza esta imagen de mi mascota" },
-                {
-                    inlineData: {
-                        mimeType: mimeType,
-                        data: base64Data
-                    }
-                }
-            ]
-        };
-      } else {
-        contents = {
-             parts: [{ text: input }]
-        };
+      if (!apiKey) {
+        throw new Error("Falta la API Key en .env.local");
       }
 
+      const genAI = new GoogleGenerativeAI(apiKey);
+      
+      // CORRECCIÓN 3: Usar modelo estable "gemini-1.5-flash"
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: "Eres un asistente veterinario experto para la app DNIPETS. Eres amable, breve y empático. Das consejos útiles sobre salud, pero SIEMPRE aclaras que 'esto no sustituye una consulta veterinaria' si el caso parece grave. Identificas razas de perros y gatos."
+      });
+
+      const promptParts: any[] = [];
+      if (input) promptParts.push(input);
+      
+      if (currentImage) {
+        const mimeType = currentImage.split(';')[0].split(':')[1];
+        promptParts.push(fileToGenerativePart(currentImage, mimeType));
+      }
+
+      // Preparar mensaje de respuesta vacío para streaming
       const responseId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, {
         id: responseId,
         role: 'model',
-        text: '',
+        text: 'Pensando...', // Placeholder
         timestamp: Date.now()
       }]);
 
-      const result = await ai.models.generateContentStream({
-        model: modelId,
-        contents: [contents],
-        config: {
-            systemInstruction: "Eres un asistente experto en cuidado de mascotas para la app DNIPETS. Eres amable, empático y das consejos útiles sobre salud (aclarando que no sustituyes al veterinario), alimentación, comportamiento y razas."
-        }
-      });
+      // Enviar a Google Gemini
+      const result = await model.generateContentStream(promptParts);
 
       let fullText = '';
-
-      for await (const chunk of result) {
-        const text = chunk.text;
-        if (text) {
-            fullText += text;
-            setMessages(prev => prev.map(msg => 
-                msg.id === responseId ? { ...msg, text: fullText } : msg
-            ));
-        }
+      
+      // Procesar el stream de respuesta
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        fullText += chunkText;
+        
+        // Actualizar el mensaje en tiempo real
+        setMessages(prev => prev.map(msg => 
+            msg.id === responseId ? { ...msg, text: fullText } : msg
+        ));
       }
 
     } catch (error) {
@@ -142,7 +153,7 @@ const ChatInterface: React.FC = () => {
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'model',
-        text: "Lo siento, tuve un problema procesando tu consulta. Por favor intenta de nuevo.",
+        text: "⚠️ Ocurrió un error. Asegúrate de haber puesto tu API Key en el archivo .env.local o verifica tu conexión.",
         timestamp: Date.now()
       }]);
     } finally {
@@ -252,9 +263,5 @@ const ChatInterface: React.FC = () => {
     </div>
   );
 };
-
-const XIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-);
 
 export default ChatInterface;
