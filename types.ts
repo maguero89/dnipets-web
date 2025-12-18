@@ -69,3 +69,9 @@ export interface HealthRecord {
   veterinarian?: string;
   fileUrl?: string;
 }
+// --- TIPO PARA EL GENERADOR DE IMÁGENES ---
+export interface ImageGenerationResult {
+  url: string;
+  prompt: string;
+  createdAt: number;
+}
