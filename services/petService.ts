@@ -1,10 +1,12 @@
-
 import { createClient } from '@supabase/supabase-js';
+// Mantenemos tus tipos para que el resto de la app siga funcionando
 import { Pet, HealthRecord, UserProfile } from '../types';
 
+// Tus credenciales oficiales de Supabase
 const SUPABASE_URL = 'https://totbrjiujqnnybgvhdaz.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_P2z5GB_sRCuyIDLZgCt7AA__3Nm9oJR';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvdGJyaml1anFubnliZ3ZoZGF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3Nzc4MDgsImV4cCI6MjA3OTM1MzgwOH0.R60ZATX-4eFanwta0gkFj0aX3ABMVXJnWwmBxqwlJ6s';
 
+// Creamos la conexión única (el "cliente")
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Helper to safely extract error message
