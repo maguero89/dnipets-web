@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PublicPetView } from './components/PublicPetView';
 import { AdminMapa } from './components/AdminMapa';
 import LandingPage from './components/LandingPage';
 import { Pet, UserProfile } from './types';
@@ -333,7 +334,7 @@ const App: React.FC = () => {
       );
   }
 
-  if (scannedPet && scannedOwner) return <PublicPetProfile pet={scannedPet} owner={scannedOwner} />;
+  if (scannedPet && scannedOwner) return <PublicPetView pet={scannedPet} owner={scannedOwner} />;
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
