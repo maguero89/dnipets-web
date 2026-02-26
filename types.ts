@@ -75,3 +75,13 @@ export interface ImageGenerationResult {
   prompt: string;
   timestamp: number; // <--- AQUÍ ESTABA LA DIFERENCIA (Antes decía createdAt)
 }
+
+// --- TIPO PARA MENSAJES DE CONTACTO ---
+export interface ContactMessage {
+  id: string;
+  created_at: string;
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+}

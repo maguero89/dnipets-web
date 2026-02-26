@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { PublicPetProfile } from './components/PublicPetProfile';
 import { FormularioComercio } from './components/FormularioComercio';
 import { TablaComercios } from './components/TablaComercios';
+import { AdminMessages } from './components/AdminMessages';
 import LandingPage from './components/LandingPage';
 import { Pet, UserProfile } from './types';
 import { petService, supabase } from './services/petService';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock, Eye, EyeOff, Layout, MessageSquare } from 'lucide-react';
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -20,6 +21,7 @@ const App: React.FC = () => {
 
   // Estado para el comercio que se está editando
   const [comercioAEditar, setComercioAEditar] = useState<any | null>(null);
+  const [adminTab, setAdminTab] = useState<'comercios' | 'mensajes'>('comercios');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -72,30 +74,11 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0d0f35]">
-      <LandingPage />
-
-      <footer className="py-12 bg-[#0d0f35] flex flex-col items-center justify-center border-t border-white/5 relative z-10">
-        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-6">
-          © 2026 DNI-PETS - Digital Identity
-        </p>
-        {!user ? (
-          <button
-            onClick={() => setShowLogin(true)}
-            className="text-slate-700 hover:text-[#00d1c6] transition-colors p-3 bg-white/5 rounded-full border border-white/5"
-          >
-            <Lock size={16} />
-          </button>
-        ) : (
-          <div className="flex flex-col items-center gap-3">
-            <span className="text-[10px] font-black text-[#00d1c6] uppercase tracking-widest bg-[#00d1c6]/10 px-3 py-1 rounded-full border border-[#00d1c6]/20">
-              Sesión iniciada
-            </span>
-            <button onClick={handleLogout} className="text-red-500 text-[10px] font-black uppercase tracking-widest hover:text-red-400 transition-colors">
-              CERRAR SESIÓN
-            </button>
-          </div>
-        )}
-      </footer>
+      <LandingPage
+        onAdminLogin={() => setShowLogin(true)}
+        onLogout={handleLogout}
+        user={user}
+      />
 
       {showLogin && (
         <div className="fixed inset-0 bg-[#0d0f35]/95 backdrop-blur-md flex items-center justify-center z-[100] p-4">
@@ -142,32 +125,68 @@ const App: React.FC = () => {
       {user?.email === 'maguero89@gmail.com' && (
         <div className="bg-[#1c183d] p-8 md:p-20 border-t border-white/5 relative z-10">
           <div className="max-w-5xl mx-auto space-y-12">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+
+            {/* ADMIN HEADER & TABS */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div>
-                <h3 className="text-4xl font-[900] text-white uppercase tracking-tighter">Gestión de Comercios</h3>
-                <p className="text-[#00d1c6] text-xs font-bold uppercase tracking-[0.2em] mt-2">Panel de Administración - DNI-PETS</p>
+                <h3 className="text-4xl font-[900] text-white uppercase tracking-tighter">
+                  {adminTab === 'comercios' ? 'Gestión de Comercios' : 'Buzón de Mensajes'}
+                </h3>
+                <p className="text-[#00d1c6] text-xs font-bold uppercase tracking-[0.2em] mt-2">
+                  Panel de Administración - DNI-PETS
+                </p>
               </div>
-              <div className="bg-[#2a2550] px-4 py-2 rounded-xl border border-white/5">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</p>
-                <p className="text-[#00d1c6] font-bold text-sm">Sincronizado con Supabase</p>
+
+              {/* TAB SWITCHER */}
+              <div className="flex bg-[#2a2550] p-1.5 rounded-2xl border border-white/5 shadow-2xl">
+                <button
+                  onClick={() => setAdminTab('comercios')}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${adminTab === 'comercios'
+                      ? 'bg-[#00d1c6] text-[#0d0f35] shadow-lg shadow-[#00d1c6]/20'
+                      : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                  <Layout size={14} />
+                  Mapa
+                </button>
+                <button
+                  onClick={() => setAdminTab('mensajes')}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${adminTab === 'mensajes'
+                      ? 'bg-[#00d1c6] text-[#0d0f35] shadow-lg shadow-[#00d1c6]/20'
+                      : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                  <MessageSquare size={14} />
+                  Mensajes
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-              <div className="lg:col-span-5">
-                <FormularioComercio
-                  comercioAEditar={comercioAEditar}
-                  onCancelarEdicion={() => setComercioAEditar(null)}
-                  onComercioGuardado={() => setRefreshKey(prev => prev + 1)}
-                />
-              </div>
-              <div className="lg:col-span-7">
-                <TablaComercios
-                  refreshKey={refreshKey}
-                  onEditRequest={(com) => setComercioAEditar(com)}
-                />
-              </div>
+            {/* TAB CONTENT */}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {adminTab === 'comercios' ? (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                  <div className="lg:col-span-5">
+                    <FormularioComercio
+                      comercioAEditar={comercioAEditar}
+                      onCancelarEdicion={() => setComercioAEditar(null)}
+                      onComercioGuardado={() => setRefreshKey(prev => prev + 1)}
+                    />
+                  </div>
+                  <div className="lg:col-span-7">
+                    <TablaComercios
+                      refreshKey={refreshKey}
+                      onEditRequest={(com) => setComercioAEditar(com)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  <AdminMessages />
+                </div>
+              )}
             </div>
+
           </div>
         </div>
       )}
