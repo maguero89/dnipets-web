@@ -25,10 +25,45 @@ export const PublicPetView: React.FC<Props> = ({ pet, owner }) => {
         // Filtramos para ver si tiene registros de tipo "Vacuna" o simplemente si tiene registros
         setVacunas(records);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, [pet.id]);
 
-  const tieneVacunas = vacunas.length > 0;
+  let vaccineStatus = 'none';
+  let vaccineText = 'Sin vacunas registradas';
+
+  if (vacunas.length > 0) {
+      const justVaccines = vacunas.filter(r => r.type === 'vaccine' || r.title.toLowerCase().includes('vacuna'));
+      const recordsToUse = justVaccines.length > 0 ? justVaccines : vacunas;
+
+      let latestDate: Date | null = null;
+      for (const record of recordsToUse) {
+          if (record.date) {
+              const d = new Date(record.date);
+              if (!latestDate || d > latestDate) {
+                  latestDate = d;
+              }
+          }
+      }
+
+      if (latestDate) {
+          const today = new Date();
+          const msDiff = today.getTime() - latestDate.getTime();
+          const daysDiff = msDiff / (1000 * 60 * 60 * 24);
+
+          if (daysDiff > 365) {
+              vaccineStatus = 'expired';
+              vaccineText = 'Vacunas vencidas';
+          } else if (daysDiff > 335) { // roughly 11 months
+              vaccineStatus = 'expiring-soon';
+              vaccineText = 'Próximo a vencerse';
+          } else {
+              vaccineStatus = 'up-to-date';
+              vaccineText = 'Vacunas al día';
+          }
+      }
+  }
+
   const whatsappLink = owner.phone ? `https://wa.me/${owner.phone.replace(/[^0-9]/g, '')}?text=Hola, escaneé el carnet de ${pet.name}` : null;
 
   return (
@@ -88,13 +123,21 @@ export const PublicPetView: React.FC<Props> = ({ pet, owner }) => {
             <div className="mt-6 pt-4 border-t border-slate-100">
                 {loading ? (
                     <p className="text-xs text-slate-400 animate-pulse">Verificando sistema de salud...</p>
-                ) : tieneVacunas ? (
+                ) : vaccineStatus === 'up-to-date' ? (
                     <div className="flex items-center gap-2 text-green-600 font-black uppercase text-sm">
-                        <ShieldCheck size={20} /> Vacunas al Día
+                        <ShieldCheck size={20} /> {vaccineText}
+                    </div>
+                ) : vaccineStatus === 'expiring-soon' ? (
+                    <div className="flex items-center gap-2 text-yellow-500 font-black uppercase text-sm">
+                        <AlertTriangle size={20} /> {vaccineText}
+                    </div>
+                ) : vaccineStatus === 'expired' ? (
+                    <div className="flex items-center gap-2 text-red-500 font-black uppercase text-sm">
+                        <AlertTriangle size={20} /> {vaccineText}
                     </div>
                 ) : (
-                    <div className="flex items-center gap-2 text-red-500 font-black uppercase text-sm">
-                        <AlertTriangle size={20} className="animate-bounce" /> Sin vacunas registradas
+                    <div className="flex items-center gap-2 text-slate-400 font-black uppercase text-sm">
+                        <AlertTriangle size={20} /> {vaccineText}
                     </div>
                 )}
             </div>

@@ -1,7 +1,8 @@
-import React from 'react';
-import { ShieldCheck, AlertTriangle, User as UserIcon, MessageCircle } from 'lucide-react';
-import { Pet, UserProfile } from '../types';
+import React, { useEffect, useState } from 'react';
+import { ShieldCheck, AlertTriangle, User as UserIcon, MessageCircle, Syringe } from 'lucide-react';
+import { Pet, UserProfile, HealthRecord } from '../types';
 import { PawPrintBackground } from './PawPrintBackground';
+import { petService } from '../services/petService';
 
 interface Props {
     pet: Pet;
@@ -13,6 +14,57 @@ export const PublicPetProfile: React.FC<Props> = ({ pet, owner }) => {
     const isSafe = pet.status === 'safe';
     const phone = owner.phone ? owner.phone.replace(/[^0-9]/g, '') : '';
     const whatsappLink = phone ? `https://wa.me/${phone}?text=Hola, escaneé el código QR de ${pet.name} y quiero ayudar.` : null;
+
+    const [vacunas, setVacunas] = useState<HealthRecord[]>([]);
+    const [loadingHealth, setLoadingHealth] = useState(true);
+
+    useEffect(() => {
+        petService.getHealthRecords(pet.id)
+            .then(records => {
+                setVacunas(records);
+                setLoadingHealth(false);
+            })
+            .catch(() => setLoadingHealth(false));
+    }, [pet.id]);
+
+    let vaccineStatus = 'none';
+    let vaccineText = 'Sin vacunas registradas';
+    let vaccineColor = 'text-slate-500';
+
+    if (vacunas.length > 0) {
+        const justVaccines = vacunas.filter(r => r.type === 'vaccine' || r.title.toLowerCase().includes('vacuna'));
+        const recordsToUse = justVaccines.length > 0 ? justVaccines : vacunas;
+
+        let latestDate: Date | null = null;
+        for (const record of recordsToUse) {
+            if (record.date) {
+                const d = new Date(record.date);
+                if (!latestDate || d > latestDate) {
+                    latestDate = d;
+                }
+            }
+        }
+
+        if (latestDate) {
+            const today = new Date();
+            const msDiff = today.getTime() - latestDate.getTime();
+            const daysDiff = msDiff / (1000 * 60 * 60 * 24);
+
+            if (daysDiff > 365) {
+                vaccineStatus = 'expired';
+                vaccineText = 'Vacunas vencidas';
+                vaccineColor = 'text-red-500';
+            } else if (daysDiff > 335) { // roughly 11 months
+                vaccineStatus = 'expiring-soon';
+                vaccineText = 'Próximo a vencerse';
+                vaccineColor = 'text-yellow-500';
+            } else {
+                vaccineStatus = 'up-to-date';
+                vaccineText = 'Vacunas al día';
+                vaccineColor = 'text-[#00D1C6]';
+            }
+        }
+    }
 
     if (isSafe) {
         return (
@@ -33,6 +85,22 @@ export const PublicPetProfile: React.FC<Props> = ({ pet, owner }) => {
                             Actualmente estoy en casa y cuidado por mi dueño, <span className="font-bold text-white uppercase">{owner.firstName}</span>.
                         </p>
                     </div>
+                    
+                    {/* VACCINE STATUS FOR SAFE PET */}
+                    <div className="bg-[#2a2550] p-4 rounded-2xl border border-white/5 shadow-inner flex items-center gap-4 text-left">
+                        <div className="w-12 h-12 rounded-xl bg-[#1c183d] flex items-center justify-center shrink-0 border border-white/5">
+                            <Syringe className={`w-6 h-6 ${vaccineColor}`} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black">Estado de Salud</p>
+                            {loadingHealth ? (
+                                <p className="text-xs text-slate-400 animate-pulse mt-1 font-bold">Verificando...</p>
+                            ) : (
+                                <p className={`text-sm font-black uppercase tracking-tight mt-1 ${vaccineColor}`}>{vaccineText}</p>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="pt-4 border-t border-white/5">
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Identidad verificada por DNI-PETS</p>
                     </div>
@@ -77,6 +145,24 @@ export const PublicPetProfile: React.FC<Props> = ({ pet, owner }) => {
                         </div>
                     )}
                 </div>
+
+                {/* VACCINE STATUS FOR LOST/ADOPTION PET */}
+                <div className="px-8 -mt-2 mb-4">
+                    <div className="bg-[#2a2550] p-4 rounded-2xl border border-white/5 shadow-inner flex items-center gap-4 text-left">
+                        <div className="w-12 h-12 rounded-xl bg-[#1c183d] flex items-center justify-center shrink-0 border border-white/5">
+                            <Syringe className={`w-6 h-6 ${vaccineColor}`} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black">Estado de Salud</p>
+                            {loadingHealth ? (
+                                <p className="text-xs text-slate-400 animate-pulse mt-1 font-bold">Verificando...</p>
+                            ) : (
+                                <p className={`text-sm font-black uppercase tracking-tight mt-1 ${vaccineColor}`}>{vaccineText}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
                 <div className="px-8 pb-10 space-y-5">
                     <div className="bg-[#2a2550] p-5 rounded-2xl flex items-center gap-5 border border-white/5 shadow-inner">
                         <div className="w-14 h-14 rounded-2xl bg-[#1c183d] flex items-center justify-center shrink-0 border border-white/5">
