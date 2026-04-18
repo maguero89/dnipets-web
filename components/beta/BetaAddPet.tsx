@@ -60,7 +60,7 @@ export const BetaAddPet: React.FC<BetaAddPetProps> = ({ onBack, onSaved }) => {
   };
 
   return (
-    <div className="flex-1 bg-[#0d0f35] flex flex-col pt-12 animate-in slide-in-from-bottom duration-300 z-50">
+    <div className="flex-1 bg-[#0d0f35] flex flex-col h-full overflow-hidden pt-12 animate-in slide-in-from-bottom duration-300 z-50">
       
       {/* HEADER */}
       <div className="flex justify-between items-center px-6 pb-6 text-white">
@@ -71,8 +71,8 @@ export const BetaAddPet: React.FC<BetaAddPetProps> = ({ onBack, onSaved }) => {
       </div>
 
       {/* BODY FORM */}
-      <div className="flex-1 bg-white rounded-t-3xl p-6 overflow-y-auto">
-        <form onSubmit={handleSubmit} className="space-y-6 flex flex-col h-full">
+      <div className="flex-1 bg-white rounded-t-3xl p-6 overflow-y-auto pb-32">
+        <form onSubmit={handleSubmit} className="space-y-6 flex flex-col">
           
           {/* FOTO */}
           <div className="space-y-2">

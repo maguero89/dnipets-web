@@ -87,7 +87,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
 
           <div className="flex gap-4 relative z-10">
             {/* Foto Left */}
-            <div className="w-32 h-40 bg-slate-100 rounded-2xl overflow-hidden shadow-sm shrink-0">
+            <div className="w-28 h-40 bg-slate-100 rounded-2xl overflow-hidden shadow-sm shrink-0">
               {pet.photoUrl ? (
                 <img src={pet.photoUrl} alt={pet.name} className="w-full h-full object-cover" />
               ) : (
@@ -99,7 +99,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
 
             {/* Datos Right */}
             <div className="flex-1 flex flex-col relative">
-              <h3 className="text-2xl font-black text-[#0d0f35] uppercase leading-none tracking-tight">{pet.name}</h3>
+              <h3 className="text-xl font-black text-[#0d0f35] uppercase leading-tight tracking-tight pr-14 break-words">{pet.name}</h3>
               <div className="bg-[#00D1C6] text-white text-[9px] font-black tracking-widest px-2 py-0.5 rounded-md w-fit uppercase mt-1 mb-3 shadow-[0_2px_10px_rgba(0,209,198,0.3)]">
                 ID ANIMAL
               </div>
