@@ -25,12 +25,19 @@ const BrandPaw = ({ className }: { className?: string }) => (
 export const BetaAuth: React.FC<BetaAuthProps> = ({ onLoginSuccess }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (mode === 'register' && email !== confirmEmail) {
+      alert("Los correos electrónicos no coinciden. Por favor, revísalos.");
+      return;
+    }
+
     setLoading(true);
     try {
       if (mode === 'login') {
@@ -42,7 +49,7 @@ export const BetaAuth: React.FC<BetaAuthProps> = ({ onLoginSuccess }) => {
       }
     } catch (error: any) {
       if (error.message === "CONFIRM_EMAIL_SENT") {
-        alert("Te hemos enviado un enlace a tu correo para activar tu cuenta.");
+        alert("Cuenta creada con éxito. (Si no apagaste la confirmación en Supabase, te enviamos un enlace al correo).");
       } else {
         alert("Error: " + error.message);
       }
@@ -91,13 +98,26 @@ export const BetaAuth: React.FC<BetaAuthProps> = ({ onLoginSuccess }) => {
           <div>
             <input 
               type="email" 
-              placeholder="Email" 
+              placeholder={mode === 'register' ? "Ingresa tu Email" : "Email"}
               required
               className="w-full bg-[#e2e8f0] text-[#0d0f35] p-4 rounded-xl outline-none font-medium placeholder:text-slate-400 placeholder:font-normal"
               value={email}
               onChange={e => setEmail(e.target.value)}
             />
           </div>
+
+          {mode === 'register' && (
+            <div className="animate-in slide-in-from-top-2 duration-300">
+              <input 
+                type="email" 
+                placeholder="Confirma tu Email" 
+                required
+                className="w-full bg-[#e2e8f0] text-[#0d0f35] p-4 rounded-xl outline-none font-medium placeholder:text-slate-400 placeholder:font-normal"
+                value={confirmEmail}
+                onChange={e => setConfirmEmail(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="relative">
             <input 
