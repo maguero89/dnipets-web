@@ -37,11 +37,12 @@ const BrandPaw = ({ className }: { className?: string }) => (
 
 interface LandingPageProps {
   onAdminLogin?: () => void;
+  onBetaLogin?: () => void;
   onLogout?: () => void;
   user?: any;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onAdminLogin, onLogout, user }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onAdminLogin, onBetaLogin, onLogout, user }) => {
   const instagramUrl = "https://www.instagram.com/DniPets.ok";
 
   // Rutas relativas a la carpeta public
@@ -110,11 +111,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAdminLogin, onLogout, user 
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={handleCTA}
-                  className="flex-1 sm:flex-none px-8 py-5 bg-[#0d0f35] text-white rounded-2xl font-bold text-base flex items-center justify-center gap-3 shadow-2xl shadow-[#0d0f35]/30 hover:-translate-y-1 transition-all group"
+                  onClick={onBetaLogin}
+                  className="flex-1 sm:flex-none px-8 py-4 bg-[#0d0f35] text-white rounded-2xl font-bold flex flex-col items-center justify-center shadow-2xl shadow-[#0d0f35]/30 hover:-translate-y-1 transition-all group"
                 >
-                  Conoce el Proyecto
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform text-[#00d1c6]" />
+                  <div className="flex items-center gap-2 text-base">
+                    Probar la App
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform text-[#00d1c6]" />
+                  </div>
+                  <span className="text-[10px] text-[#00d1c6] font-medium tracking-widest uppercase mt-1">(Prueba Beta Simulator)</span>
                 </button>
               </div>
             </div>

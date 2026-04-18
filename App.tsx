@@ -4,6 +4,7 @@ import { FormularioComercio } from './components/FormularioComercio';
 import { TablaComercios } from './components/TablaComercios';
 import { AdminMessages } from './components/AdminMessages';
 import LandingPage from './components/LandingPage';
+import { MobileSimulator } from './components/beta/MobileSimulator';
 import { Pet, UserProfile } from './types';
 import { petService, supabase } from './services/petService';
 import { Lock, Eye, EyeOff, Layout, MessageSquare } from 'lucide-react';
@@ -16,6 +17,7 @@ const App: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showLogin, setShowLogin] = useState(false);
+  const [showBetaSimulator, setShowBetaSimulator] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -76,6 +78,7 @@ const App: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-[#0d0f35]">
       <LandingPage
         onAdminLogin={() => setShowLogin(true)}
+        onBetaLogin={() => setShowBetaSimulator(true)}
         onLogout={handleLogout}
         user={user}
       />
@@ -120,6 +123,10 @@ const App: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {showBetaSimulator && (
+        <MobileSimulator onClose={() => setShowBetaSimulator(false)} />
       )}
 
       {user?.email === 'maguero89@gmail.com' && (

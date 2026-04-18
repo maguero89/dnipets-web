@@ -39,6 +39,53 @@ class PetService {
     return null;
   }
 
+  async recoverPassword(email: string): Promise<void> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://www.dnipets.com/reset-password',
+    });
+    if (error) {
+      console.error('Error recovering password:', error);
+      throw new Error(formatError(error));
+    }
+  }
+
+  async signInWithEmail(email: string, password: string): Promise<UserProfile | null> {
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) {
+      if (signInError.message.includes("Email not confirmed")) throw new Error("CONFIRM_EMAIL_SENT");
+      if (signInError.message.includes("Invalid login credentials")) throw new Error("Correo o contraseña incorrectos.");
+      throw new Error(formatError(signInError));
+    }
+    if (signInData.user) return await this.getUserProfile(signInData.user.id);
+    return null;
+  }
+
+  async signUpWithEmail(email: string, password: string): Promise<UserProfile | null> {
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: 'https://www.dnipets.com/' }
+    });
+    
+    if (signUpError) {
+      if (signUpError.message.includes("User already registered")) throw new Error("Este correo ya está registrado.");
+      throw new Error(formatError(signUpError));
+    }
+
+    if (signUpData.user && !signUpData.session) throw new Error("CONFIRM_EMAIL_SENT");
+
+    if (signUpData.user) {
+      const newUserProfile: UserProfile = {
+        uid: signUpData.user.id,
+        firstName: '', lastName: '', phone: '', email: email, securityPin: '',
+        address: { street: '', number: '', city: '', province: '', countryCode: '+54' }
+      };
+      await this.updateUserProfile(newUserProfile);
+      return newUserProfile;
+    }
+    return null;
+  }
+
   async authWithEmail(email: string, password: string): Promise<UserProfile | null> {
     // 1. Intentar Login normal
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -66,7 +113,7 @@ class PetService {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: 'https://www.dnipets.com/'
         }
       });
 
