@@ -23,6 +23,8 @@
     <meta property="twitter:image" content="https://totbrjiujqnnybgvhdaz.supabase.co/storage/v1/object/public/public_assets/og_image.jpg" />
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <style>
       body {
         font-family: 'Inter', sans-serif;
@@ -48,6 +50,16 @@
       .markdown-body p { margin-bottom: 0.75rem; }
       .markdown-body pre { background: #1c183d; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1rem; }
       .markdown-body code { background: #334155; padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.875em; }
+
+      /* Fix completo para marcadores DivIcon de Leaflet */
+      .leaflet-div-icon,
+      .custom-map-pin {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+
     </style>
   <script type="importmap">
 {

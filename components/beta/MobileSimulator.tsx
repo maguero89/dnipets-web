@@ -7,13 +7,14 @@ import { BetaDashboard } from './BetaDashboard';
 import { BetaAddPet } from './BetaAddPet';
 import { BetaUserProfile } from './BetaUserProfile';
 import { DocumentView } from './DocumentView';
+import { BetaMapView } from './BetaMapView';
 import { UserProfile, Pet } from '../../types';
 
 interface MobileSimulatorProps {
   onClose: () => void;
 }
 
-type AppState = 'loading' | 'auth' | 'onboarding' | 'dashboard' | 'add_pet' | 'view_pet' | 'view_profile';
+type AppState = 'loading' | 'auth' | 'onboarding' | 'dashboard' | 'add_pet' | 'view_pet' | 'view_profile' | 'map';
 
 export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => {
   const [appState, setAppState] = useState<AppState>('loading');
@@ -115,6 +116,7 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => 
                 setAppState('view_pet');
               }}
               onViewProfile={() => setAppState('view_profile')}
+              onViewMap={() => setAppState('map')}
             />
           )}
 
@@ -141,6 +143,14 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => 
               profile={userProfile}
               onBackToHome={() => setAppState('dashboard')}
               onLogout={handleLogout}
+            />
+          )}
+
+          {appState === 'map' && userProfile && (
+            <BetaMapView
+              profile={userProfile}
+              onGoHome={() => setAppState('dashboard')}
+              onViewProfile={() => setAppState('view_profile')}
             />
           )}
           

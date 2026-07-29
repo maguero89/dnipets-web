@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 // Mantenemos tus tipos para que el resto de la app siga funcionando
-import { Pet, HealthRecord, UserProfile, ContactMessage } from '../types';
+import { Pet, HealthRecord, UserProfile, ContactMessage, Establishment } from '../types';
 
 // Tus credenciales oficiales de Supabase
 const SUPABASE_URL = 'https://totbrjiujqnnybgvhdaz.supabase.co';
@@ -639,6 +639,17 @@ class PetService {
       console.error('Error deleting contact message:', error);
       throw new Error(formatError(error));
     }
+  }
+
+  // --- ESTABLECIMIENTOS / COMERCIOS ---
+
+  async getEstablishments(): Promise<Establishment[]> {
+    const { data, error } = await supabase.from('comercios').select('*');
+    if (error) {
+      console.error("Error fetching comercios:", error);
+      return [];
+    }
+    return data as Establishment[];
   }
 }
 

@@ -85,3 +85,16 @@ export interface ContactMessage {
   phone?: string;
   message: string;
 }
+
+// --- TIPO PARA COMERCIOS Y ESTABLECIMIENTOS ---
+export interface Establishment {
+  id: string;
+  nombre: string;
+  rubro: 'veterinaria' | 'petshop' | 'peluqueria' | string;
+  direccion: string;
+  lat: number;
+  lng: number;
+  telefono?: string;
+  resena?: string;
+}
+

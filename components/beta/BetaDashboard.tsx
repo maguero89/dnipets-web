@@ -8,9 +8,10 @@ interface BetaDashboardProps {
   onAddPet: () => void;
   onViewPet: (pet: Pet) => void;
   onViewProfile: () => void;
+  onViewMap?: () => void;
 }
 
-export const BetaDashboard: React.FC<BetaDashboardProps> = ({ profile, onAddPet, onViewPet, onViewProfile }) => {
+export const BetaDashboard: React.FC<BetaDashboardProps> = ({ profile, onAddPet, onViewPet, onViewProfile, onViewMap }) => {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -112,7 +113,7 @@ export const BetaDashboard: React.FC<BetaDashboardProps> = ({ profile, onAddPet,
           <Home size={24} />
           <span className="text-[10px] font-bold">Inicio</span>
         </button>
-        <button className="flex flex-col items-center gap-1 text-slate-400">
+        <button onClick={onViewMap} className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#00d1c6] transition-colors">
           <Map size={24} />
           <span className="text-[10px] font-medium">Mapa</span>
         </button>
