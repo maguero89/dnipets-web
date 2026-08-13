@@ -11,7 +11,6 @@ import {
   Syringe,
   ShoppingBag,
   Scissors,
-  Loader2,
   Navigation,
   AlertTriangle,
   Plus
@@ -26,7 +25,6 @@ import {
   getDeterministicOffset
 } from '../../utils/leafletIcons';
 
-// Config default icon
 L.Marker.prototype.options.icon = defaultIcon;
 
 interface BetaMapViewProps {
@@ -36,7 +34,6 @@ interface BetaMapViewProps {
   onOpenPublicPet?: (petId: string) => void;
 }
 
-// Component to dynamically re-center map when location is found
 const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
   const map = useMap();
   useEffect(() => {
@@ -51,14 +48,12 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
   onViewProfile,
   onOpenPublicPet
 }) => {
-  const [location, setLocation] = useState<[number, number]>([-34.6037, -58.3816]); // Default BsAs/Mendoza default
+  const [location, setLocation] = useState<[number, number]>([-34.6037, -58.3816]);
   const [loadingLoc, setLoadingLoc] = useState(true);
   const [communityPets, setCommunityPets] = useState<Pet[]>([]);
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
-    // Get user GPS position
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation([pos.coords.latitude, pos.coords.longitude]);
@@ -71,22 +66,19 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
       { enableHighAccuracy: true }
     );
 
-    // Fetch lost pets and establishments
     Promise.all([
       petService.getCommunityPets(),
       petService.getEstablishments()
     ]).then(([pets, ests]) => {
       setCommunityPets(pets);
       setEstablishments(ests);
-      setLoadingData(false);
     }).catch(err => {
       console.error("Error loading map data:", err);
-      setLoadingData(false);
     });
   }, []);
 
   return (
-    <div className="flex-1 bg-slate-100 flex flex-col relative h-full w-full overflow-hidden animate-in fade-in duration-300">
+    <div className="flex-1 bg-slate-100 flex flex-col relative h-full w-full overflow-hidden animate-in fade-in duration-300 font-sans">
       
       {/* HEADER OVERLAY */}
       <div className="absolute top-8 left-4 right-4 z-[999] bg-[#0d0f35]/90 backdrop-blur-md p-3 rounded-2xl border border-white/10 shadow-xl flex items-center justify-between">
@@ -113,35 +105,35 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
         <div className="font-black text-slate-400 border-b border-slate-100 pb-1 uppercase tracking-widest text-[9px]">Leyenda</div>
         
         <div className="flex items-center gap-2 font-bold text-slate-700">
-          <div className="w-4 h-4 rounded-full bg-[#dc2626] border border-white shadow-sm flex items-center justify-center text-white flex-shrink-0">
+          <div className="w-4 h-4 rounded-full bg-[#dc2626] border border-white shadow-sm flex items-center justify-center text-white shrink-0">
             <Plus size={10} strokeWidth={3.5} />
           </div>
           <span className="text-[10px]">Veterinarias</span>
         </div>
 
         <div className="flex items-center gap-2 font-bold text-slate-700">
-          <div className="w-4 h-4 rounded-full bg-[#00d1c6] border border-white shadow-sm flex items-center justify-center text-white flex-shrink-0">
+          <div className="w-4 h-4 rounded-full bg-[#00d1c6] border border-white shadow-sm flex items-center justify-center text-white shrink-0">
             <ShoppingBag size={9} strokeWidth={2.5} />
           </div>
           <span className="text-[10px]">Petshops</span>
         </div>
 
         <div className="flex items-center gap-2 font-bold text-slate-700">
-          <div className="w-4 h-4 rounded-full bg-[#9333ea] border border-white shadow-sm flex items-center justify-center text-white flex-shrink-0">
+          <div className="w-4 h-4 rounded-full bg-[#9333ea] border border-white shadow-sm flex items-center justify-center text-white shrink-0">
             <Scissors size={9} strokeWidth={2.5} />
           </div>
           <span className="text-[10px]">Peluquerías</span>
         </div>
 
         <div className="flex items-center gap-2 font-bold text-slate-700">
-          <div className="w-4 h-4 rounded-full bg-[#dc2626] border border-white shadow-sm flex items-center justify-center text-white flex-shrink-0">
+          <div className="w-4 h-4 rounded-full bg-[#dc2626] border border-white shadow-sm flex items-center justify-center text-white shrink-0">
             <AlertTriangle size={9} strokeWidth={2.5} />
           </div>
           <span className="text-[10px]">Perdidas</span>
         </div>
 
         <div className="flex items-center gap-2 font-bold text-slate-700">
-          <div className="w-4 h-4 rounded-full bg-[#a855f7] border border-white shadow-sm flex items-center justify-center text-white flex-shrink-0">
+          <div className="w-4 h-4 rounded-full bg-[#a855f7] border border-white shadow-sm flex items-center justify-center text-white shrink-0">
             <Heart size={9} fill="currentColor" />
           </div>
           <span className="text-[10px]">En Adopción</span>
@@ -167,19 +159,22 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
           <Marker position={location} icon={homeIcon}>
             <Popup>
               <div className="text-center font-bold text-xs p-1 text-[#0d0f35]">
-                📍 Tu ubicación actual
+                📍 Tu ubicación actual (GPS)
               </div>
             </Popup>
           </Marker>
 
-          {/* PETS MARKERS (Perdidos / Adopción) */}
+          {/* PETS MARKERS CON COORDENADAS ESTÁTICAS FIJAS */}
           {communityPets.map(pet => {
             let position: [number, number];
             if (pet.lastLat && pet.lastLng) {
+              // Posición estática guardada en la BD cuando se reportó perdido
               position = [pet.lastLat, pet.lastLng];
             } else {
+              // Si no hay coordenadas fijas guardadas, usamos una posición de referencia fija para que NUNCA cambie dinámicamente según el usuario
+              const staticBaseCenter: [number, number] = [-34.6037, -58.3816];
               const [offLat, offLng] = getDeterministicOffset(pet.id);
-              position = [location[0] + offLat, location[1] + offLng];
+              position = [staticBaseCenter[0] + offLat, staticBaseCenter[1] + offLng];
             }
 
             const iconToUse = createPetMarkerIcon(pet.photoUrl, pet.status, pet.name);
@@ -203,7 +198,7 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
                     </span>
                     
                     <a
-                      href={`https://wa.me/?text=${encodeURIComponent(`Hola, vi la publicación de ${pet.name} en el mapa de DNI-PETS.`)}`}
+                      href={`https://wa.me/?text=${encodeURIComponent(`Hola, vi el reporte de ${pet.name} en el mapa de DNI-PETS.`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-2 w-full bg-[#25D366] hover:bg-[#128C7E] text-white text-[10px] font-bold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 transition-transform active:scale-95 shadow-sm text-decoration-none"

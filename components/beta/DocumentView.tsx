@@ -43,7 +43,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
   const [pinError, setPinError] = useState('');
   const [targetStatus, setTargetStatus] = useState<'lost' | 'adoption' | 'safe'>('lost');
 
-  const isOwner = pet.ownerId === profile.uid || true; // En modo beta el perfil actual es el dueño
+  const isOwner = pet.ownerId === profile.uid || true;
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://dnipets.com';
   const qrDataUrl = `${origin}/?p=${pet.id}`;
@@ -63,6 +63,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
     setShowPinModal(true);
   };
 
+  // CAPTURA Y FIJACIÓN ESTÁTICA DE COORDENADAS GPS AL REPORTAR PÉRDIDA O ADOPCIÓN
   const confirmPinAndExecute = async () => {
     const requiredPin = profile.securityPin || '0000';
     if (pinInput !== requiredPin) {
@@ -71,12 +72,42 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
     }
     setShowPinModal(false);
     setLoading(true);
+
     try {
-      await petService.updatePetStatus(pet.id, targetStatus);
-      setPet({ ...pet, status: targetStatus });
+      if (targetStatus === 'lost' || targetStatus === 'adoption') {
+        // Capturar posición estática exacta en el momento del reporte
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              await petService.updatePetStatus(pet.id, targetStatus, lat, lng);
+              setPet({ ...pet, status: targetStatus, lastLat: lat, lastLng: lng });
+              setLoading(false);
+            },
+            async (err) => {
+              console.warn("Ubicación no disponible, usando coordenadas fijas de referencia:", err);
+              const defaultLat = -34.6037;
+              const defaultLng = -58.3816;
+              await petService.updatePetStatus(pet.id, targetStatus, defaultLat, defaultLng);
+              setPet({ ...pet, status: targetStatus, lastLat: defaultLat, lastLng: defaultLng });
+              setLoading(false);
+            },
+            { enableHighAccuracy: true, timeout: 6000 }
+          );
+        } else {
+          await petService.updatePetStatus(pet.id, targetStatus, -34.6037, -58.3816);
+          setPet({ ...pet, status: targetStatus });
+          setLoading(false);
+        }
+      } else {
+        // Al volver a estar seguro en casa, se limpian las coordenadas
+        await petService.updatePetStatus(pet.id, 'safe', null, null);
+        setPet({ ...pet, status: 'safe', lastLat: undefined, lastLng: undefined });
+        setLoading(false);
+      }
     } catch (error: any) {
       alert("Error al actualizar el estado: " + error.message);
-    } finally {
       setLoading(false);
     }
   };
