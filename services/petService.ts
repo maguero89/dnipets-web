@@ -546,6 +546,40 @@ class PetService {
     }
   }
 
+  // --- FILE UPLOADS ---
+
+  async uploadFile(file: File, folder: string = 'health-records'): Promise<string> {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+      const filePath = `${folder}/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('health-records')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (!error && data) {
+        const { data: publicUrlData } = supabase.storage
+          .from('health-records')
+          .getPublicUrl(filePath);
+
+        if (publicUrlData?.publicUrl) {
+          return publicUrlData.publicUrl;
+        }
+      }
+    } catch (err) {
+      console.warn("Supabase Storage upload fallback to DataURL:", err);
+    }
+
+    // Fallback: Read as Base64 / Data URL
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  }
+
   // --- PUBLIC ACCESS & COMMUNITY ---
 
   async getPublicPetData(petId: string): Promise<{ pet: Pet, owner: UserProfile } | null> {

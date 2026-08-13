@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { UserProfile, Pet } from '../../types';
 import { petService } from '../../services/petService';
-import { ChevronRight, Home, Map, Heart, User, Loader2 } from 'lucide-react';
+import { ChevronRight, Home, Map, Heart, User, Loader2, Plus } from 'lucide-react';
+import { PawPrintBackground } from '../PawPrintBackground';
 
 interface BetaDashboardProps {
   profile: UserProfile;
@@ -9,9 +10,17 @@ interface BetaDashboardProps {
   onViewPet: (pet: Pet) => void;
   onViewProfile: () => void;
   onViewMap?: () => void;
+  onViewAdoption?: () => void;
 }
 
-export const BetaDashboard: React.FC<BetaDashboardProps> = ({ profile, onAddPet, onViewPet, onViewProfile, onViewMap }) => {
+export const BetaDashboard: React.FC<BetaDashboardProps> = ({ 
+  profile, 
+  onAddPet, 
+  onViewPet, 
+  onViewProfile, 
+  onViewMap,
+  onViewAdoption 
+}) => {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,104 +34,107 @@ export const BetaDashboard: React.FC<BetaDashboardProps> = ({ profile, onAddPet,
   const getInitial = (name: string) => name ? name.charAt(0).toUpperCase() : 'U';
 
   return (
-    <div className="flex-1 bg-slate-50 flex flex-col relative animate-in fade-in duration-300">
-      
-      {/* BACKGROUND PATTERN SIMULATION */}
-      <div className="absolute inset-0 z-0 opacity-[0.02] pointer-events-none overflow-hidden flex flex-wrap gap-10 p-4">
-        {[...Array(20)].map((_, i) => (
-          <svg key={i} viewBox="0 0 100 100" className="w-12 h-12 text-[#00D1C6]">
-            <circle cx="20" cy="38" r="12" fill="currentColor" />
-            <circle cx="42" cy="22" r="12" fill="currentColor" />
-            <circle cx="68" cy="25" r="12" fill="currentColor" />
-            <circle cx="88" cy="45" r="12" fill="currentColor" />
-            <path d="M28 62 C 28 62, 40 45, 55 45 C 70 45, 82 62, 82 62 C 82 62, 85 85, 55 92 C 25 85, 28 62, 28 62 Z" fill="currentColor" />
-          </svg>
-        ))}
-      </div>
+    <div className="flex-1 bg-slate-50 flex flex-col relative animate-in fade-in duration-300 font-sans overflow-hidden">
+      <PawPrintBackground />
 
       {/* HEADER */}
-      <div className="relative z-10 px-6 pt-12 pb-6 flex justify-between items-center">
+      <div className="relative z-10 px-6 pt-12 pb-4 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div>
-          <h1 className="text-2xl font-black text-[#0d0f35] flex items-center gap-2">
-            Hola, {profile.firstName || 'Dueño'}
+          <h1 className="text-2xl font-black text-brand-navy tracking-tight">
+            Hola, {profile.firstName || 'Usuario'}
           </h1>
-          <p className="text-slate-500 text-sm">Gestiona la identidad de tus mascotas</p>
+          <p className="text-slate-500 text-xs font-medium">Gestiona la identidad de tus mascotas</p>
         </div>
-        <button onClick={onViewProfile} className="w-12 h-12 rounded-full bg-[#00D1C6]/10 flex items-center justify-center text-[#00D1C6] font-bold text-xl hover:bg-[#00D1C6]/20 transition-colors">
+        <button 
+          onClick={onViewProfile} 
+          className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg hover:bg-primary/20 transition-colors shadow-sm"
+        >
           {getInitial(profile.firstName || profile.email)}
         </button>
       </div>
 
-      {/* PETS LIST SECTION */}
-      <div className="relative z-10 px-6 flex-1 overflow-y-auto pb-24">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-[#0d0f35]">Mis Mascotas</h2>
-          <button 
-            onClick={onAddPet}
-            className="flex items-center gap-1 bg-[#00D1C6]/10 text-[#00D1C6] px-4 py-2 rounded-xl font-bold text-sm"
-          >
-            + Nueva
-          </button>
+      {/* CONTENT AREA */}
+      <div className="relative z-10 px-6 flex-1 overflow-y-auto pt-6 pb-24 space-y-6">
+
+        {/* PETS LIST SECTION */}
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-brand-navy">Mis Mascotas</h2>
+            <button 
+              onClick={onAddPet}
+              className="flex items-center gap-1 text-primary font-bold text-xs bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
+            >
+              <Plus size={16} /> Nueva
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="animate-spin text-primary" size={30} />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pets.map(pet => (
+                <div 
+                  key={pet.id} 
+                  onClick={() => onViewPet(pet)}
+                  className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md active:scale-95 transition-all"
+                >
+                  <div className={`w-16 h-16 rounded-xl overflow-hidden border-2 ${
+                    pet.status === 'lost' ? 'border-red-500' : pet.status === 'adoption' ? 'border-purple-500' : 'border-gray-100'
+                  }`}>
+                    {pet.photoUrl ? (
+                      <img src={pet.photoUrl} alt={pet.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xl">
+                        {pet.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-bold text-lg text-brand-navy leading-snug">{pet.name}</h3>
+                      {pet.status === 'lost' && <span className="text-[9px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Perdido</span>}
+                      {pet.status === 'adoption' && <span className="text-[9px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider">En Adopción</span>}
+                    </div>
+                    <p className="text-gray-500 text-xs mt-0.5">{pet.breed || pet.species} • {pet.sex === 'Hembra' ? 'Hembra' : 'Macho'}</p>
+                  </div>
+
+                  <ChevronRight size={20} className="text-gray-300" />
+                </div>
+              ))}
+
+              {pets.length === 0 && (
+                <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-slate-400 font-medium text-sm">Aún no tienes mascotas registradas.</p>
+                  <button onClick={onAddPet} className="mt-3 text-primary font-bold text-xs hover:underline">
+                    + Registrar primera mascota
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="animate-spin text-[#00D1C6]" size={30} />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {pets.map(pet => (
-              <div 
-                key={pet.id} 
-                onClick={() => onViewPet(pet)}
-                className="bg-white rounded-2xl p-4 flex items-center shadow-sm border border-slate-100 cursor-pointer active:scale-95 transition-transform"
-              >
-                {/* FOTO */}
-                {pet.photoUrl ? (
-                  <img src={pet.photoUrl} alt={pet.name} className="w-16 h-16 rounded-2xl object-cover" />
-                ) : (
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-2xl">
-                    {pet.name.charAt(0)}
-                  </div>
-                )}
-                
-                {/* DETALLES */}
-                <div className="ml-4 flex-1">
-                  <h3 className="text-lg font-bold text-[#0d0f35] leading-tight">{pet.name}</h3>
-                  <p className="text-sm text-slate-500">{pet.breed || pet.species} • {pet.sex === 'Hembra' ? 'H' : 'M'}</p>
-                </div>
-
-                <div className="text-slate-300">
-                  <ChevronRight size={20} />
-                </div>
-              </div>
-            ))}
-
-            {pets.length === 0 && (
-              <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-200">
-                <p className="text-slate-400 font-medium">Aún no tienes mascotas registradas.</p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* BOTTOM NAV BAR */}
+      {/* BOTTOM NAV BAR 1:1 CON LA APP ORIGINAL */}
       <div className="absolute bottom-0 inset-x-0 h-20 bg-white border-t border-slate-100 flex justify-around items-center px-2 pb-4 z-20">
-        <button className="flex flex-col items-center gap-1 text-[#0d0f35]">
-          <Home size={24} />
-          <span className="text-[10px] font-bold">Inicio</span>
+        <button className="flex flex-col items-center gap-1 text-brand-navy">
+          <Home size={22} className="text-brand-navy" strokeWidth={2.5} />
+          <span className="text-[10px] font-bold text-brand-navy">Inicio</span>
         </button>
-        <button onClick={onViewMap} className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#00d1c6] transition-colors">
-          <Map size={24} />
+        <button onClick={onViewMap} className="flex flex-col items-center gap-1 text-slate-400 hover:text-brand-navy transition-colors">
+          <Map size={22} />
           <span className="text-[10px] font-medium">Mapa</span>
         </button>
-        <button className="flex flex-col items-center gap-1 text-slate-400">
-          <Heart size={24} />
+        <button onClick={onViewAdoption} className="flex flex-col items-center gap-1 text-slate-400 hover:text-brand-navy transition-colors">
+          <Heart size={22} />
           <span className="text-[10px] font-medium">Adopción</span>
         </button>
-        <button onClick={onViewProfile} className="flex flex-col items-center gap-1 text-slate-400">
-          <User size={24} />
+        <button onClick={onViewProfile} className="flex flex-col items-center gap-1 text-slate-400 hover:text-brand-navy transition-colors">
+          <User size={22} />
           <span className="text-[10px] font-medium">Perfil</span>
         </button>
       </div>

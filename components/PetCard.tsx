@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Pet } from '../types';
-import { QrCode, ExternalLink, Activity, Info } from 'lucide-react';
+import { QrCode, ExternalLink, Activity, Syringe } from 'lucide-react';
 import { QRCodeViewer } from './QRCodeViewer';
+import { MedicalHistoryModal } from './MedicalHistoryModal';
 
 interface PetCardProps {
   pet: Pet;
@@ -9,6 +10,7 @@ interface PetCardProps {
 
 export const PetCard: React.FC<PetCardProps> = ({ pet }) => {
   const [showQR, setShowQR] = useState(false);
+  const [showHealthModal, setShowHealthModal] = useState(false);
 
   return (
     <>
@@ -39,29 +41,39 @@ export const PetCard: React.FC<PetCardProps> = ({ pet }) => {
           </div>
         </div>
 
-        <div className="p-6 flex-1 flex flex-col justify-between">
+        <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
           <div>
             <h3 className="text-2xl font-black text-white tracking-tighter uppercase mb-1">{pet.name}</h3>
             <p className="text-slate-400 text-sm font-medium">{pet.breed} • {pet.sex}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <button 
-              onClick={() => setShowQR(true)}
-              className="flex items-center justify-center gap-2 bg-[#0d0f35] text-white p-3 rounded-xl hover:bg-[#00d1c6] hover:text-[#0d0f35] transition-colors border border-white/5 font-bold text-xs uppercase tracking-widest"
+          <div className="space-y-2">
+            <button
+              onClick={() => setShowHealthModal(true)}
+              className="w-full flex items-center justify-center gap-2 bg-[#00d1c6]/10 text-[#00d1c6] hover:bg-[#00d1c6] hover:text-[#0d0f35] p-3 rounded-xl transition-all border border-[#00d1c6]/30 font-bold text-xs uppercase tracking-widest"
             >
-              <QrCode size={16} />
-              Ver QR
+              <Syringe size={16} />
+              Historial Médico y Vacunas
             </button>
-            <a 
-              href={`/?id=${pet.id}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 bg-[#0d0f35] text-white p-3 rounded-xl hover:bg-white hover:text-[#0d0f35] transition-colors border border-white/5 font-bold text-xs uppercase tracking-widest"
-            >
-              <ExternalLink size={16} />
-              Perfil Web
-            </a>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => setShowQR(true)}
+                className="flex items-center justify-center gap-2 bg-[#0d0f35] text-white p-3 rounded-xl hover:bg-[#00d1c6] hover:text-[#0d0f35] transition-colors border border-white/5 font-bold text-xs uppercase tracking-widest"
+              >
+                <QrCode size={16} />
+                Ver QR
+              </button>
+              <a 
+                href={`/?id=${pet.id}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 bg-[#0d0f35] text-white p-3 rounded-xl hover:bg-white hover:text-[#0d0f35] transition-colors border border-white/5 font-bold text-xs uppercase tracking-widest"
+              >
+                <ExternalLink size={16} />
+                Perfil Web
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -73,6 +85,14 @@ export const PetCard: React.FC<PetCardProps> = ({ pet }) => {
           onClose={() => setShowQR(false)} 
         />
       )}
+
+      {showHealthModal && (
+        <MedicalHistoryModal
+          pet={pet}
+          onClose={() => setShowHealthModal(false)}
+        />
+      )}
     </>
   );
 };
+

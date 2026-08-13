@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, petService } from '../../services/petService';
-import { X, Battery, Wifi, Signal } from 'lucide-react';
+import { X, Battery, Wifi, Signal, Home, Map, Heart, User } from 'lucide-react';
 import { BetaAuth } from './BetaAuth';
 import { BetaOwnerProfile } from './BetaOwnerProfile';
 import { BetaDashboard } from './BetaDashboard';
@@ -8,19 +8,18 @@ import { BetaAddPet } from './BetaAddPet';
 import { BetaUserProfile } from './BetaUserProfile';
 import { DocumentView } from './DocumentView';
 import { BetaMapView } from './BetaMapView';
+import { BetaAdoptionView } from './BetaAdoptionView';
 import { UserProfile, Pet } from '../../types';
 
 interface MobileSimulatorProps {
   onClose: () => void;
 }
 
-type AppState = 'loading' | 'auth' | 'onboarding' | 'dashboard' | 'add_pet' | 'view_pet' | 'view_profile' | 'map';
+type AppState = 'loading' | 'auth' | 'onboarding' | 'dashboard' | 'add_pet' | 'view_pet' | 'view_profile' | 'map' | 'adoption';
 
 export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => {
   const [appState, setAppState] = useState<AppState>('loading');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  
-  // Navigation stack logic
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
 
   useEffect(() => {
@@ -43,7 +42,6 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => 
       return;
     }
 
-    // Check if phone number is missing
     const profile = await petService.getUserProfile(session.user.id);
     setUserProfile(profile);
 
@@ -117,6 +115,7 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => 
               }}
               onViewProfile={() => setAppState('view_profile')}
               onViewMap={() => setAppState('map')}
+              onViewAdoption={() => setAppState('adoption')}
             />
           )}
 
@@ -152,6 +151,33 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => 
               onGoHome={() => setAppState('dashboard')}
               onViewProfile={() => setAppState('view_profile')}
             />
+          )}
+
+          {appState === 'adoption' && (
+            <div className="flex-1 flex flex-col relative h-full">
+              <BetaAdoptionView 
+                onGoHome={() => setAppState('dashboard')} 
+              />
+              {/* BARRA INFERIOR DE NAVEGACIÓN EN ADOPCIÓN */}
+              <div className="absolute bottom-0 inset-x-0 h-20 bg-white border-t border-slate-100 flex justify-around items-center px-2 pb-4 z-20">
+                <button onClick={() => setAppState('dashboard')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-brand-navy">
+                  <Home size={22} />
+                  <span className="text-[10px] font-medium">Inicio</span>
+                </button>
+                <button onClick={() => setAppState('map')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-brand-navy">
+                  <Map size={22} />
+                  <span className="text-[10px] font-medium">Mapa</span>
+                </button>
+                <button className="flex flex-col items-center gap-1 text-brand-navy">
+                  <Heart size={22} className="text-brand-navy" strokeWidth={2.5} />
+                  <span className="text-[10px] font-bold text-brand-navy">Adopción</span>
+                </button>
+                <button onClick={() => setAppState('view_profile')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-brand-navy">
+                  <User size={22} />
+                  <span className="text-[10px] font-medium">Perfil</span>
+                </button>
+              </div>
+            </div>
           )}
           
         </div>

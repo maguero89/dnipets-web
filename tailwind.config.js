@@ -7,7 +7,16 @@ export default {
     "./*.{js,ts,jsx,tsx}"
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: '#00D1C6',
+        'primary-dark': '#00B3A6',
+        secondary: '#E0F7FA',
+        'brand-navy': '#0D0F35',
+        alert: '#DC2626',
+        success: '#16A34A',
+      }
+    },
   },
   plugins: [],
 }

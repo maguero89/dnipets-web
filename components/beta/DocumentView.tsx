@@ -1,7 +1,25 @@
-import React, { useState } from 'react';
-import { Pet, UserProfile } from '../../types';
-import { ArrowLeft, Settings, AlertTriangle, Heart, ShieldCheck, Download, Share2, X, Lock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Pet, UserProfile, HealthRecord, RecordType } from '../../types';
+import { 
+  ArrowLeft, 
+  Settings, 
+  AlertTriangle, 
+  Heart, 
+  ShieldCheck, 
+  Download, 
+  Share2, 
+  X, 
+  Lock, 
+  Syringe, 
+  Calendar, 
+  FileText, 
+  Edit2, 
+  Trash2, 
+  Plus 
+} from 'lucide-react';
 import { petService } from '../../services/petService';
+import { RealIdCard } from '../ui/RealIdCard';
+import { RecordModal } from '../modals/RecordModal';
 
 interface DocumentViewProps {
   pet: Pet;
@@ -12,199 +30,350 @@ interface DocumentViewProps {
 export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, profile, onBack }) => {
   const [pet, setPet] = useState<Pet>(initialPet);
   const [loading, setLoading] = useState(false);
-  
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
+
+  // Modal de Historial Médico
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [recordTypeToAdd, setRecordTypeToAdd] = useState<RecordType>('vaccine');
+  const [editingRecord, setEditingRecord] = useState<HealthRecord | undefined>(undefined);
+
   // States for PIN modal
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
+  const [targetStatus, setTargetStatus] = useState<'lost' | 'adoption' | 'safe'>('lost');
 
-  const qrUrl = `https://www.dnipets.com/?id=${pet.id}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
+  const isOwner = pet.ownerId === profile.uid || true; // En modo beta el perfil actual es el dueño
 
-  const handleLostToggle = () => {
-    if (pet.status !== 'lost') {
-      // Intentar poner en Modo Perdido -> Mostrar PIN
-      setPinInput('');
-      setPinError('');
-      setShowPinModal(true);
-    } else {
-      // Restaurar a Seguro
-      executeStatusChange('safe');
-    }
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://dnipets.com';
+  const qrDataUrl = `${origin}/?p=${pet.id}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrDataUrl)}`;
+
+  useEffect(() => {
+    petService.getHealthRecords(pet.id)
+      .then(setHealthRecords)
+      .catch(() => setHealthRecords([]));
+  }, [pet.id]);
+
+  const requestStatusChange = (newStatus: 'lost' | 'adoption' | 'safe') => {
+    if (newStatus === pet.status) return;
+    setTargetStatus(newStatus);
+    setPinInput('');
+    setPinError('');
+    setShowPinModal(true);
   };
 
-  const confirmPinAndReport = () => {
+  const confirmPinAndExecute = async () => {
     const requiredPin = profile.securityPin || '0000';
     if (pinInput !== requiredPin) {
-      setPinError('El PIN es incorrecto.');
+      setPinError('El PIN ingresado es incorrecto.');
       return;
     }
     setShowPinModal(false);
-    executeStatusChange('lost');
-  };
-
-  const executeStatusChange = async (newStatus: 'safe' | 'lost') => {
     setLoading(true);
     try {
-      await petService.updatePetStatus(pet.id, newStatus);
-      setPet({ ...pet, status: newStatus });
+      await petService.updatePetStatus(pet.id, targetStatus);
+      setPet({ ...pet, status: targetStatus });
     } catch (error: any) {
-      alert("Error al actualizar estado: " + error.message);
+      alert("Error al actualizar el estado: " + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateAge = (birthDate?: string) => {
-    if (!birthDate) return '-';
-    // Simplified age calculation
-    const currentYear = new Date().getFullYear();
-    const birthYear = parseInt(birthDate.substring(0, 4));
-    return currentYear - birthYear > 0 ? `${currentYear - birthYear} años` : 'Cachorro';
+  const handleSaveRecord = async (recordData: Partial<HealthRecord>) => {
+    try {
+      if (editingRecord) {
+        const updatedRec = { ...editingRecord, ...recordData } as HealthRecord;
+        await petService.updateHealthRecord(updatedRec);
+        setHealthRecords(prev => prev.map(h => h.id === updatedRec.id ? updatedRec : h));
+      } else {
+        const newRec = {
+          ...recordData,
+          id: Date.now().toString(),
+          petId: pet.id
+        } as HealthRecord;
+        await petService.addHealthRecord(newRec);
+        setHealthRecords(prev => [...prev, newRec]);
+      }
+      setIsRecordModalOpen(false);
+      setEditingRecord(undefined);
+    } catch (e: any) {
+      alert("Error al guardar registro médico: " + e.message);
+    }
+  };
+
+  const handleDeleteRecord = async (recordId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm("¿Deseas eliminar este registro médico?")) {
+      try {
+        await petService.deleteHealthRecord(recordId);
+        setHealthRecords(prev => prev.filter(r => r.id !== recordId));
+      } catch (err: any) {
+        alert("Error al eliminar: " + (err.message || err));
+      }
+    }
+  };
+
+  const handleDownloadQr = async () => {
+    try {
+      const response = await fetch(qrImageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `QR_${pet.name}_DNI_PETS.png`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (e) {
+      window.open(qrImageUrl, '_blank');
+    }
+  };
+
+  const getExpirationStatus = (nextDueDate?: string) => {
+    if (!nextDueDate) return null;
+    const today = new Date();
+    const due = new Date(nextDueDate);
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return 'expired';
+    if (diffDays <= 30) return 'urgent';
+    return 'ok';
   };
 
   return (
-    <div className="flex-1 bg-slate-50 flex flex-col h-full animate-in slide-in-from-right duration-300">
+    <div className="flex-1 bg-slate-50 flex flex-col h-full animate-in slide-in-from-right duration-300 font-sans">
       
       {/* HEADER */}
-      <div className="flex items-center justify-between px-4 pt-12 pb-4 bg-white z-20 shadow-sm relative">
-        <button onClick={onBack} className="p-2 border border-slate-200 rounded-full text-slate-600 hover:bg-slate-50 transition-colors">
+      <div className="flex items-center justify-between px-4 pt-12 pb-4 bg-white z-20 shadow-sm relative border-b border-slate-100">
+        <button onClick={onBack} className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <h2 className="text-xl font-bold text-[#0d0f35] capitalize">{pet.name}</h2>
-        <button className="p-2 border border-slate-200 rounded-full text-slate-600 hover:bg-slate-50 transition-colors">
+        <span className="text-brand-navy font-bold text-lg">{pet.name}</span>
+        <button className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors">
           <Settings size={20} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pt-6 pb-24 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 space-y-6">
         
-        {/* DNI CARD */}
-        <div className="bg-white rounded-3xl p-5 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden ring-1 ring-slate-100">
-          
-          {/* Faint Background Logo / Gradient Simulation */}
-          <div className="absolute right-[-40px] bottom-[-40px] w-48 h-48 bg-gradient-to-tr from-[#00D1C6]/20 to-transparent rounded-full blur-2xl pointer-events-none"></div>
-
-          <div className="flex gap-4 relative z-10">
-            {/* Foto Left */}
-            <div className="w-28 h-40 bg-slate-100 rounded-2xl overflow-hidden shadow-sm shrink-0">
-              {pet.photoUrl ? (
-                <img src={pet.photoUrl} alt={pet.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
-                  <span className="text-4xl font-black">{pet.name.charAt(0)}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Datos Right */}
-            <div className="flex-1 flex flex-col relative">
-              <h3 className="text-xl font-black text-[#0d0f35] uppercase leading-tight tracking-tight pr-14 break-words">{pet.name}</h3>
-              <div className="bg-[#00D1C6] text-white text-[9px] font-black tracking-widest px-2 py-0.5 rounded-md w-fit uppercase mt-1 mb-3 shadow-[0_2px_10px_rgba(0,209,198,0.3)]">
-                ID ANIMAL
-              </div>
-
-              <div className="grid grid-cols-2 gap-y-3 gap-x-2 mt-auto text-xs">
-                <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Especie</p>
-                  <p className="font-bold text-[#0d0f35] uppercase">{pet.species === 'cat' ? 'Felina' : 'Canina'}</p>
-                </div>
-                <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Raza</p>
-                  <p className="font-bold text-[#0d0f35] capitalize">{pet.breed || 'Mestiza'}</p>
-                </div>
-                <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Sexo</p>
-                  <p className="font-bold text-[#0d0f35]">{pet.sex === 'Hembra' ? 'H' : 'M'}</p>
-                </div>
-                <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Peso</p>
-                  <p className="font-bold text-[#0d0f35]">{pet.weight} kg</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Fecha Nacimiento</p>
-                  <p className="font-bold text-[#0d0f35]">{pet.birthDate || '-'}</p>
-                </div>
-              </div>
-
-              {/* QR Code */}
-              <div className="absolute top-0 right-0 w-12 h-12 bg-white rounded-lg overflow-hidden shadow-sm border border-slate-100 flex items-center justify-center p-0.5">
-                <img src={qrImageUrl} alt="QR Code" className="w-full h-full object-contain mix-blend-multiply" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-center gap-2 mt-5 text-[#00D1C6] font-black tracking-widest text-[10px] opacity-80 border-t border-slate-100/50 pt-3">
-            DNIPETS
-          </div>
+        {/* REAL ID CARD COMPONENT */}
+        <div className="mb-2">
+          <RealIdCard pet={pet} />
         </div>
 
-        {/* QR ACTIONS (Extra no en la captura pero requeridos en la instruccion 6) */}
-        <div className="flex gap-2">
-          <a 
-            href={qrImageUrl} 
-            download={`QR_${pet.name}_Dnipets.png`}
-            target="_blank"
-            className="flex-1 flex justify-center items-center gap-2 bg-white border border-slate-200 text-slate-600 rounded-xl py-3 text-xs font-bold transition-all active:scale-95 shadow-sm"
+        {/* BOTONES DE ACCIÓN DE QR */}
+        <div className="grid grid-cols-2 gap-3">
+          <button 
+            onClick={handleDownloadQr}
+            className="flex justify-center items-center gap-2 bg-primary hover:bg-primary-dark text-white rounded-xl py-3 text-xs font-bold transition-all active:scale-95 shadow-md"
           >
-            <Download size={14} /> Descargar QR
-          </a>
+            <Download size={16} /> Descargar QR
+          </button>
           <button 
             onClick={() => {
-              navigator.clipboard.writeText(qrUrl);
-              alert("Enlace copiado");
+              navigator.clipboard.writeText(qrDataUrl);
+              alert("Enlace de perfil copiado al portapapeles");
             }}
-            className="flex-1 flex justify-center items-center gap-2 bg-white border border-slate-200 text-slate-600 rounded-xl py-3 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            className="flex justify-center items-center gap-2 bg-white border border-slate-200 text-brand-navy hover:bg-slate-50 rounded-xl py-3 text-xs font-bold transition-all active:scale-95 shadow-sm"
           >
-            <Share2 size={14} /> Enlace de Perfil
+            <Share2 size={16} /> Copiar Enlace
           </button>
         </div>
 
-        {/* ESTADO Y BOTONES DE ACCIÓN */}
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Estado Actual</p>
-            {pet.status === 'safe' ? (
-              <div className="flex items-center gap-2 text-green-600 font-black text-lg tracking-tight uppercase">
-                <ShieldCheck className="fill-green-100" size={24} />
-                Seguro en Casa
-              </div>
-            ) : pet.status === 'adoption' ? (
-              <div className="flex items-center gap-2 text-indigo-600 font-black text-lg tracking-tight uppercase">
-                <Heart className="fill-indigo-100" size={24} />
-                En Adopción
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-red-600 font-black text-lg tracking-tight uppercase animate-pulse">
-                <AlertTriangle className="fill-red-100" size={24} />
-                Reportado Perdido
-              </div>
-            )}
+        {/* CONTROLES DE ESTADO ACTUAL */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estado Actual</p>
+              <p className={`font-bold text-sm ${
+                pet.status === 'lost' ? 'text-red-600' : pet.status === 'adoption' ? 'text-purple-600' : 'text-green-600'
+              }`}>
+                {pet.status === 'lost' ? '⚠️ PERDIDO' : pet.status === 'adoption' ? '💜 EN ADOPCIÓN' : '✅ SEGURO EN CASA'}
+              </p>
+            </div>
           </div>
-
-          <div className="pt-2">
+          <div className="grid grid-cols-2 gap-3">
             <button 
-              onClick={handleLostToggle}
-              disabled={loading}
-              className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl border-2 transition-all active:scale-95 disabled:opacity-50 ${
-                pet.status === 'lost' 
-                ? 'bg-slate-100 border-slate-200 text-slate-600' 
-                : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100'
+              onClick={() => requestStatusChange(pet.status === 'lost' ? 'safe' : 'lost')}
+              disabled={loading || pet.status === 'adoption'}
+              className={`px-3 py-3 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 ${
+                pet.status === 'lost' ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600 border border-red-100'
               }`}
             >
-              <AlertTriangle size={20} />
-              <span className="font-bold text-sm tracking-wide">
-                {pet.status === 'lost' ? 'MARCAR COMO ENCONTRADO' : 'REPORTAR PÉRDIDA'}
-              </span>
+              {pet.status === 'lost' ? 'Marcar Encontrado' : <><AlertTriangle size={15} /> Reportar Pérdida</>}
             </button>
+            <button 
+              onClick={() => requestStatusChange(pet.status === 'adoption' ? 'safe' : 'adoption')}
+              disabled={loading || pet.status === 'lost'}
+              className={`px-3 py-3 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 ${
+                pet.status === 'adoption' ? 'bg-gray-100 text-gray-700' : 'bg-purple-50 text-purple-600 border border-purple-100'
+              }`}
+            >
+              {pet.status === 'adoption' ? 'Cancelar Adopción' : <><Heart size={15} /> Dar en Adopción</>}
+            </button>
+          </div>
+        </div>
+
+        {/* HISTORIAL MÉDICO 1:1 CON LA APLICACIÓN ORIGINAL */}
+        <div className="space-y-4">
+          <h3 className="font-bold text-brand-navy text-lg">Historial Médico</h3>
+
+          {/* 1. SECCIÓN VACUNAS */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2 text-brand-navy font-bold">
+                <Syringe size={18} className="text-primary" /> Vacunas
+              </div>
+              {isOwner && (
+                <button 
+                  onClick={() => { setEditingRecord(undefined); setRecordTypeToAdd('vaccine'); setIsRecordModalOpen(true); }} 
+                  className="text-primary text-xs font-bold bg-primary/10 px-2.5 py-1 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-1"
+                >
+                  <Plus size={12} /> Agregar
+                </button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {healthRecords.filter(r => r.type === 'vaccine').length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No hay vacunas registradas</p>
+              ) : (
+                healthRecords.filter(r => r.type === 'vaccine').map(r => { 
+                  const expirationStatus = getExpirationStatus(r.nextDueDate); 
+                  return (
+                    <div key={r.id} className="flex justify-between items-center text-sm border-b border-gray-50 last:border-0 pb-2">
+                      <div className="flex-1">
+                        <p className="font-semibold text-brand-navy">{r.title}</p>
+                        <p className="text-gray-600 text-xs">{r.date}</p>
+                        {r.nextDueDate && (
+                          <div className={`mt-1 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
+                            expirationStatus === 'urgent' ? 'bg-red-100 text-red-700 border border-red-200' : expirationStatus === 'expired' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-500'
+                          }`}>
+                            {expirationStatus === 'urgent' && <AlertTriangle size={10} />}
+                            {expirationStatus === 'expired' ? 'VENCIDA' : `Vence: ${r.nextDueDate}`}
+                          </div>
+                        )}
+                      </div>
+                      {isOwner && (
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => { setEditingRecord(r); setRecordTypeToAdd('vaccine'); setIsRecordModalOpen(true); }} className="p-1.5 text-gray-400 hover:text-primary bg-gray-50 rounded-lg">
+                            <Edit2 size={14} />
+                          </button>
+                          <button type="button" onClick={(e) => handleDeleteRecord(r.id, e)} className="p-1.5 text-gray-400 hover:text-red-600 bg-gray-50 rounded-lg">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* 2. SECCIÓN AGENDA / VISITAS */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2 text-brand-navy font-bold">
+                <Calendar size={18} className="text-primary" /> Agenda / Visitas
+              </div>
+              {isOwner && (
+                <button 
+                  onClick={() => { setEditingRecord(undefined); setRecordTypeToAdd('vet_visit'); setIsRecordModalOpen(true); }} 
+                  className="text-primary text-xs font-bold bg-primary/10 px-2.5 py-1 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-1"
+                >
+                  <Plus size={12} /> Agregar
+                </button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {healthRecords.filter(r => r.type === 'vet_visit').length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No hay visitas registradas</p>
+              ) : (
+                healthRecords.filter(r => r.type === 'vet_visit').map(r => (
+                  <div key={r.id} className="flex justify-between items-center text-sm border-b border-gray-50 last:border-0 pb-2">
+                    <div className="flex-1">
+                      <p className="font-semibold text-brand-navy">{r.title}</p>
+                      {r.veterinarian && <p className="text-gray-600 text-xs">{r.veterinarian}</p>}
+                      <span className="text-xs text-gray-500 block mt-0.5">{r.date}</span>
+                    </div>
+                    {isOwner && (
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => { setEditingRecord(r); setRecordTypeToAdd('vet_visit'); setIsRecordModalOpen(true); }} className="p-1.5 text-gray-400 hover:text-primary bg-gray-50 rounded-lg">
+                          <Edit2 size={14} />
+                        </button>
+                        <button type="button" onClick={(e) => handleDeleteRecord(r.id, e)} className="p-1.5 text-gray-400 hover:text-red-600 bg-gray-50 rounded-lg">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* 3. SECCIÓN DOCUMENTOS */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2 text-brand-navy font-bold">
+                <FileText size={18} className="text-primary" /> Documentos
+              </div>
+              {isOwner && (
+                <button 
+                  onClick={() => { setEditingRecord(undefined); setRecordTypeToAdd('certificate'); setIsRecordModalOpen(true); }} 
+                  className="text-primary text-xs font-bold bg-primary/10 px-2.5 py-1 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-1"
+                >
+                  <Plus size={12} /> Agregar
+                </button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {healthRecords.filter(r => r.type === 'certificate').length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No hay documentos</p>
+              ) : (
+                healthRecords.filter(r => r.type === 'certificate').map(r => (
+                  <div key={r.id} className="flex items-center gap-3 text-sm border-b border-gray-50 last:border-0 pb-2">
+                    <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center overflow-hidden shrink-0">
+                      {r.fileUrl ? <img src={r.fileUrl} className="w-full h-full object-cover" alt="" /> : <FileText size={14} className="text-gray-400" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-brand-navy">{r.title}</p>
+                      <p className="text-gray-600 text-xs">{r.date}</p>
+                    </div>
+                    {isOwner && (
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => { setEditingRecord(r); setRecordTypeToAdd('certificate'); setIsRecordModalOpen(true); }} className="p-1.5 text-gray-400 hover:text-primary bg-gray-50 rounded-lg">
+                          <Edit2 size={14} />
+                        </button>
+                        <button type="button" onClick={(e) => handleDeleteRecord(r.id, e)} className="p-1.5 text-gray-400 hover:text-red-600 bg-gray-50 rounded-lg">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
       </div>
 
+      <RecordModal
+        isOpen={isRecordModalOpen}
+        onClose={() => { setIsRecordModalOpen(false); setEditingRecord(undefined); }}
+        type={recordTypeToAdd}
+        initialRecord={editingRecord}
+        onSave={handleSaveRecord}
+      />
+
       {/* PIN CONFIRMATION MODAL */}
       {showPinModal && (
-        <div className="absolute inset-0 z-50 bg-[#0d0f35]/90 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
+        <div className="absolute inset-0 z-50 bg-brand-navy/90 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
             <button 
               onClick={() => setShowPinModal(false)}
@@ -212,27 +381,27 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
             >
               <X size={20} />
             </button>
-            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-4">
               <Lock size={24} />
             </div>
-            <h3 className="text-xl font-bold text-[#0d0f35] mb-2 leading-tight">Confirmar Acción</h3>
-            <p className="text-sm text-slate-500 mb-6">Ingresa tu PIN de seguridad para reportar a {pet.name} como pérdida. Si no lo has cambiado, el valor por defecto es <span className="font-bold text-[#0d0f35]">0000</span>.</p>
+            <h3 className="text-xl font-bold text-brand-navy mb-2 leading-tight">PIN de Seguridad</h3>
+            <p className="text-xs text-slate-500 mb-4">Ingresa tu PIN para cambiar el estado de {pet.name}. El PIN por defecto es <span className="font-bold text-brand-navy">0000</span>.</p>
             
             <input 
               type="password"
               maxLength={4}
               placeholder="0000"
-              className="w-full bg-slate-50 border border-slate-200 text-center text-[#0d0f35] text-3xl tracking-[0.5em] font-black p-4 rounded-xl outline-none focus:border-red-400 focus:ring-4 focus:ring-red-400/10 transition-all mb-2 placeholder:text-slate-300"
+              className="w-full bg-slate-50 border border-slate-200 text-center text-brand-navy text-3xl tracking-[0.5em] font-black p-4 rounded-xl outline-none focus:border-primary transition-all mb-2"
               value={pinInput}
               onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
             />
-            {pinError && <p className="text-red-500 text-xs font-bold text-center mb-4">{pinError}</p>}
+            {pinError && <p className="text-red-500 text-xs font-bold text-center mb-2">{pinError}</p>}
             
             <button 
-              onClick={confirmPinAndReport}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-4 rounded-xl transition-colors mt-4"
+              onClick={confirmPinAndExecute}
+              className="w-full bg-primary hover:bg-primary-dark text-white font-bold p-4 rounded-xl transition-colors mt-2"
             >
-              Confirmar Alerta
+              Confirmar
             </button>
           </div>
         </div>

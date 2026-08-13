@@ -1,198 +1,124 @@
-import React, { useEffect, useState } from 'react';
-import { ShieldCheck, AlertTriangle, User as UserIcon, MessageCircle, Syringe } from 'lucide-react';
-import { Pet, UserProfile, HealthRecord } from '../types';
-import { PawPrintBackground } from './PawPrintBackground';
-import { petService } from '../services/petService';
+import React from 'react';
+import { ArrowLeft, Phone, MessageCircle, Heart, CheckCircle, Lock } from 'lucide-react';
+import { Pet, UserProfile } from '../types';
+import { DniPetsLogo } from './ui/DniPetsLogo';
+import { RealIdCard } from './ui/RealIdCard';
 
-interface Props {
-    pet: Pet;
-    owner: UserProfile;
-}
-
-export const PublicPetProfile: React.FC<Props> = ({ pet, owner }) => {
+export const PublicPetProfile = ({ pet, owner, onClose, isExternal = false }: { pet: Pet, owner: UserProfile, onClose?: () => void, isExternal?: boolean }) => {
     const isLost = pet.status === 'lost';
-    const isSafe = pet.status === 'safe';
-    const phone = owner.phone ? owner.phone.replace(/[^0-9]/g, '') : '';
-    const whatsappLink = phone ? `https://wa.me/${phone}?text=Hola, escaneé el código QR de ${pet.name} y quiero ayudar.` : null;
+    const isAdoption = pet.status === 'adoption';
 
-    const [vacunas, setVacunas] = useState<HealthRecord[]>([]);
-    const [loadingHealth, setLoadingHealth] = useState(true);
+    const handleWhatsApp = () => {
+        if (!owner.phone) return;
+        const cleanPhone = owner.phone.replace(/[^0-9]/g, '');
+        const message = isLost
+            ? `¡Hola! Acabo de escanear el QR de ${pet.name} y parece que se ha perdido. Lo tengo conmigo.`
+            : `¡Hola! Estoy interesado en adoptar a ${pet.name}. Lo vi en DNIPETS.`;
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    };
 
-    useEffect(() => {
-        petService.getHealthRecords(pet.id)
-            .then(records => {
-                setVacunas(records);
-                setLoadingHealth(false);
-            })
-            .catch(() => setLoadingHealth(false));
-    }, [pet.id]);
-
-    let vaccineStatus = 'none';
-    let vaccineText = 'Sin vacunas registradas';
-    let vaccineColor = 'text-slate-500';
-
-    if (vacunas.length > 0) {
-        const justVaccines = vacunas.filter(r => r.type === 'vaccine' || r.title.toLowerCase().includes('vacuna'));
-        const recordsToUse = justVaccines.length > 0 ? justVaccines : vacunas;
-
-        let latestDate: Date | null = null;
-        for (const record of recordsToUse) {
-            if (record.date) {
-                const d = new Date(record.date);
-                if (!latestDate || d > latestDate) {
-                    latestDate = d;
-                }
-            }
-        }
-
-        if (latestDate) {
-            const today = new Date();
-            const msDiff = today.getTime() - latestDate.getTime();
-            const daysDiff = msDiff / (1000 * 60 * 60 * 24);
-
-            if (daysDiff > 365) {
-                vaccineStatus = 'expired';
-                vaccineText = 'Vacunas vencidas';
-                vaccineColor = 'text-red-500';
-            } else if (daysDiff > 335) { // roughly 11 months
-                vaccineStatus = 'expiring-soon';
-                vaccineText = 'Próximo a vencerse';
-                vaccineColor = 'text-yellow-500';
-            } else {
-                vaccineStatus = 'up-to-date';
-                vaccineText = 'Vacunas al día';
-                vaccineColor = 'text-[#00D1C6]';
-            }
-        }
-    }
-
-    if (isSafe) {
-        return (
-            <div className="min-h-screen bg-[#0d0f35] text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
-                <div className="absolute inset-0 z-0 pointer-events-none opacity-10"><PawPrintBackground /></div>
-                <div className="w-full max-w-sm bg-[#1c183d] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden relative z-10 p-8 text-center space-y-6">
-                    <div className="relative w-40 h-40 mx-auto">
-                        <img src={pet.photoUrl} className="w-full h-full object-cover rounded-full border-4 border-[#00D1C6]/30 shadow-lg shadow-[#00D1C6]/20" alt={pet.name} />
-                        <div className="absolute bottom-2 right-2 bg-[#00D1C6] text-[#0d0f35] p-2 rounded-full border-4 border-[#1c183d]"><ShieldCheck className="w-6 h-6" /></div>
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-[900] text-white uppercase tracking-tight">{pet.name}</h1>
-                        <p className="text-[#00D1C6] font-bold uppercase text-xs tracking-widest mt-1">{pet.breed}</p>
-                    </div>
-                    <div className="bg-[#2a2550] p-5 rounded-2xl border border-white/5 shadow-inner">
-                        <p className="text-[#00D1C6] font-black text-lg mb-1 uppercase tracking-tighter">¡Estoy seguro!</p>
-                        <p className="text-slate-300 text-sm leading-relaxed">
-                            Actualmente estoy en casa y cuidado por mi dueño, <span className="font-bold text-white uppercase">{owner.firstName}</span>.
-                        </p>
-                    </div>
-                    
-                    {/* VACCINE STATUS FOR SAFE PET */}
-                    <div className="bg-[#2a2550] p-4 rounded-2xl border border-white/5 shadow-inner flex items-center gap-4 text-left">
-                        <div className="w-12 h-12 rounded-xl bg-[#1c183d] flex items-center justify-center shrink-0 border border-white/5">
-                            <Syringe className={`w-6 h-6 ${vaccineColor}`} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black">Estado de Salud</p>
-                            {loadingHealth ? (
-                                <p className="text-xs text-slate-400 animate-pulse mt-1 font-bold">Verificando...</p>
-                            ) : (
-                                <p className={`text-sm font-black uppercase tracking-tight mt-1 ${vaccineColor}`}>{vaccineText}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-white/5">
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Identidad verificada por DNI-PETS</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    const handleBack = () => {
+        if (onClose) onClose();
+        else window.location.href = '/';
+    };
 
     return (
-        <div className="min-h-screen bg-[#0d0f35] text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
-            <div className="absolute inset-0 z-0 pointer-events-none opacity-10"><PawPrintBackground /></div>
-            <div className="w-full max-w-md bg-[#1c183d] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden relative z-10">
-                <div className="relative h-80">
-                    <img src={pet.photoUrl} className="w-full h-full object-cover" alt={pet.name} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#1c183d] via-transparent to-transparent" />
-                    <div className="absolute top-6 right-6">
-                        {isLost ? (
-                            <span className="bg-red-500 text-white font-black px-6 py-2 rounded-full animate-pulse shadow-xl shadow-red-900/50 flex items-center gap-2 text-sm uppercase tracking-widest border-2 border-white/20">
-                                <AlertTriangle className="w-4 h-4" /> PERDIDO
-                            </span>
-                        ) : (
-                            <span className="bg-[#00D1C6] text-[#0d0f35] font-black px-6 py-2 rounded-full shadow-xl shadow-[#00D1C6]/20 flex items-center gap-2 text-sm uppercase tracking-widest">
-                                <ShieldCheck className="w-4 h-4" /> EN ADOPCIÓN
-                            </span>
-                        )}
-                    </div>
-                    <div className="absolute bottom-6 left-8 right-8">
-                        <h1 className="text-5xl font-[900] text-white uppercase tracking-tighter drop-shadow-2xl leading-none">{pet.name}</h1>
-                        <p className="text-[#00D1C6] text-lg font-bold uppercase tracking-widest mt-2">{pet.breed} • {pet.sex}</p>
-                    </div>
+        <div className="min-h-screen bg-gray-100 flex flex-col font-sans">
+            <div className="bg-brand-navy pt-12 pb-4 px-4 text-center sticky top-0 z-20 shadow-md flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <DniPetsLogo className="w-8 h-8" />
+                    <span className="text-white font-black tracking-tighter text-xl">DNIPETS</span>
                 </div>
-                <div className="px-8 py-6">
-                    {isLost ? (
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 shadow-inner">
-                            <h3 className="font-black text-red-500 text-xl mb-1 uppercase tracking-tighter italic">¡Ayúdame a volver!</h3>
-                            <p className="text-sm text-red-300/80 font-medium">Estoy perdido. Por favor, contacta a mi familia urgentemente.</p>
+                <button onClick={handleBack} className="text-white/80 text-xs font-bold border border-white/30 px-3 py-1 rounded-full flex items-center gap-1 hover:bg-white/10 transition-colors">
+                    <ArrowLeft size={14} /> Volver
+                </button>
+            </div>
+            <div className="flex-1 p-4 pb-20 max-w-md mx-auto w-full">
+                {isLost ? (
+                    <div className="bg-white rounded-3xl overflow-hidden shadow-2xl mb-6 border-4 border-red-600 animate-slide-up">
+                        <div className="bg-red-600 p-4 text-center">
+                            <h1 className="text-3xl font-black text-white tracking-widest uppercase">¡SE BUSCA!</h1>
+                            <p className="text-white/90 text-sm font-bold uppercase mt-1">Ayúdanos a encontrarlo</p>
                         </div>
-                    ) : (
-                        <div className="bg-[#00D1C6]/10 border border-[#00D1C6]/30 rounded-2xl p-5 shadow-inner">
-                            <h3 className="font-black text-[#00D1C6] text-xl mb-1 uppercase tracking-tighter italic">¡Búscame un hogar!</h3>
-                            <p className="text-sm text-[#00D1C6]/80 font-medium">Busco una familia que me quiera. Contáctanos para adoptarme.</p>
+                        <div className="aspect-square relative bg-gray-100">
+                            {pet.photoUrl && <img src={pet.photoUrl} className="w-full h-full object-cover" alt={pet.name} />}
                         </div>
-                    )}
-                </div>
+                        <div className="p-6 text-center">
+                            <h2 className="text-4xl font-black text-brand-navy mb-2 uppercase tracking-tight">{pet.name}</h2>
+                            <div className="flex justify-center gap-2 mb-6">
+                                <span className="px-3 py-1 bg-gray-100 rounded-lg text-xs font-bold text-gray-600 uppercase">{pet.breed}</span>
+                                <span className="px-3 py-1 bg-gray-100 rounded-lg text-xs font-bold text-gray-600 uppercase">{pet.sex}</span>
+                            </div>
 
-                {/* VACCINE STATUS FOR LOST/ADOPTION PET */}
-                <div className="px-8 -mt-2 mb-4">
-                    <div className="bg-[#2a2550] p-4 rounded-2xl border border-white/5 shadow-inner flex items-center gap-4 text-left">
-                        <div className="w-12 h-12 rounded-xl bg-[#1c183d] flex items-center justify-center shrink-0 border border-white/5">
-                            <Syringe className={`w-6 h-6 ${vaccineColor}`} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black">Estado de Salud</p>
-                            {loadingHealth ? (
-                                <p className="text-xs text-slate-400 animate-pulse mt-1 font-bold">Verificando...</p>
-                            ) : (
-                                <p className={`text-sm font-black uppercase tracking-tight mt-1 ${vaccineColor}`}>{vaccineText}</p>
+                            <div className="bg-red-50 p-6 rounded-2xl border border-red-100 mb-6">
+                                <p className="text-red-800 font-bold text-sm uppercase tracking-wider mb-2">Información del Propietario</p>
+                                <h3 className="text-xl font-black text-brand-navy mb-1">{owner.firstName} {owner.lastName || ''}</h3>
+                                <p className="text-lg font-bold text-red-600 flex items-center justify-center gap-2 mb-4">
+                                    <Phone size={18} /> {owner.phone || 'Teléfono no disponible'}
+                                </p>
+                                <button onClick={handleWhatsApp} disabled={!owner.phone} className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 text-lg transition-transform active:scale-95 disabled:opacity-50">
+                                    <MessageCircle size={24} /> Contactar por WhatsApp
+                                </button>
+                            </div>
+
+                            {owner.address && (owner.address.street || owner.address.city) && (
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-left">
+                                    <p className="text-gray-500 font-bold text-xs uppercase mb-1">📍 Zona habitual</p>
+                                    <p className="text-sm text-gray-700 font-medium">
+                                        {owner.address.street} {owner.address.number}, {owner.address.city}
+                                    </p>
+                                </div>
                             )}
                         </div>
                     </div>
-                </div>
-
-                <div className="px-8 pb-10 space-y-5">
-                    <div className="bg-[#2a2550] p-5 rounded-2xl flex items-center gap-5 border border-white/5 shadow-inner">
-                        <div className="w-14 h-14 rounded-2xl bg-[#1c183d] flex items-center justify-center shrink-0 border border-white/5">
-                            <UserIcon className="text-[#00D1C6] w-6 h-6" />
+                ) : isAdoption ? (
+                    <div className="bg-white rounded-3xl overflow-hidden shadow-2xl mb-6 border-4 border-purple-500 animate-slide-up">
+                        <div className="bg-purple-600 p-4 text-center">
+                            <h1 className="text-2xl font-black text-white tracking-wide uppercase">¡BUSCO UN HOGAR!</h1>
+                            <p className="text-white/90 text-sm font-bold uppercase mt-1">Adopción Responsable</p>
                         </div>
-                        <div>
-                            <p className="text-[10px] text-[#00D1C6] uppercase tracking-[0.2em] font-black opacity-60">Responsable</p>
-                            <p className="text-xl font-black text-white uppercase tracking-tight">{owner.firstName || 'Usuario DNI-PETS'}</p>
+                        <div className="aspect-square relative bg-gray-100">
+                            {pet.photoUrl && <img src={pet.photoUrl} className="w-full h-full object-cover" alt={pet.name} />}
+                            <div className="absolute bottom-4 right-4 bg-white p-2 rounded-full shadow-lg">
+                                <Heart className="text-purple-600 fill-purple-600 animate-pulse" size={32} />
+                            </div>
+                        </div>
+                        <div className="p-6 text-center">
+                            <h2 className="text-4xl font-black text-brand-navy mb-2 uppercase tracking-tight">{pet.name}</h2>
+                            <p className="text-gray-500 italic mb-6">"{pet.notes || 'Soy muy cariñoso y busco una familia que me quiera mucho.'}"</p>
+
+                            <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 mb-6">
+                                <p className="text-purple-800 font-bold text-sm uppercase tracking-wider mb-2">Contacto para Adopción</p>
+                                <h3 className="text-xl font-black text-brand-navy mb-1">{owner.firstName} {owner.lastName || ''}</h3>
+                                <p className="text-lg font-bold text-purple-600 flex items-center justify-center gap-2 mb-4">
+                                    <Phone size={18} /> {owner.phone || 'Teléfono no disponible'}
+                                </p>
+                                <button onClick={handleWhatsApp} disabled={!owner.phone} className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 text-lg transition-transform active:scale-95 disabled:opacity-50">
+                                    <MessageCircle size={24} /> Contactar por WhatsApp
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    {whatsappLink ? (
-                        <a
-                            href={whatsappLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={`group w-full py-5 font-black rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl uppercase tracking-widest text-lg ${isLost
-                                    ? 'bg-red-600 hover:bg-red-700 shadow-red-900/20 text-white'
-                                    : 'bg-[#00D1C6] hover:bg-[#00b8ae] shadow-[#00D1C6]/20 text-[#0d0f35]'
-                                }`}
-                        >
-                            <MessageCircle className="w-6 h-6 transition-transform group-hover:scale-110" />
-                            {isLost ? 'Reportar Hallazgo' : 'Consultar'}
-                        </a>
-                    ) : (
-                        <div className="text-center text-slate-500 text-xs font-black uppercase tracking-widest p-4 bg-[#2a2550] rounded-2xl border border-white/5">
-                            Contacto privado
+                ) : (
+                    <div className="space-y-6 animate-slide-up">
+                        <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full text-center text-sm font-bold shadow-sm flex items-center justify-center gap-2">
+                            <CheckCircle size={16} /> Identidad Verificada
                         </div>
-                    )}
-                </div>
+                        <RealIdCard pet={pet} />
+                        <div className="bg-white p-6 rounded-2xl shadow-sm text-center border border-gray-100">
+                            <Lock size={48} className="mx-auto text-primary/20 mb-4" />
+                            <h3 className="text-lg font-bold text-brand-navy">Perfil Privado Protegido</h3>
+                            <p className="text-gray-500 text-sm mt-2">La información de contacto del propietario está protegida por seguridad mientras la mascota esté marcada como segura.</p>
+                        </div>
+                    </div>
+                )}
             </div>
+            {isExternal && (
+                <div className="p-6 text-center">
+                    <button onClick={handleBack} className="text-primary font-bold hover:underline">Ir a la App DNIPETS</button>
+                </div>
+            )}
+            <div className="p-4 text-center text-gray-400 text-xs">DNIPETS © 2026 - Sistema de Identidad Animal</div>
         </div>
     );
 };
