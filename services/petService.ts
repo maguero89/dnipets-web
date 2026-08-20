@@ -40,9 +40,10 @@ class PetService {
   }
 
   async recoverPassword(email: string): Promise<void> {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.dnipets.com';
+    // Para asegurar que el enlace en el email siempre abra la web oficial en cualquier dispositivo
+    const redirectUrl = 'https://www.dnipets.com/?reset=true';
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/?reset=true`,
+      redirectTo: redirectUrl,
     });
     if (error) {
       console.error('Error recovering password:', error);
