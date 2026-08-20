@@ -40,11 +40,20 @@ class PetService {
   }
 
   async recoverPassword(email: string): Promise<void> {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.dnipets.com';
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://www.dnipets.com/reset-password',
+      redirectTo: `${origin}/?reset=true`,
     });
     if (error) {
       console.error('Error recovering password:', error);
+      throw new Error(formatError(error));
+    }
+  }
+
+  async updatePassword(newPassword: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      console.error('Error updating password:', error);
       throw new Error(formatError(error));
     }
   }
@@ -61,10 +70,11 @@ class PetService {
   }
 
   async signUpWithEmail(email: string, password: string): Promise<UserProfile | null> {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.dnipets.com';
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: 'https://www.dnipets.com/' }
+      options: { emailRedirectTo: `${origin}/` }
     });
     
     if (signUpError) {
@@ -81,6 +91,19 @@ class PetService {
         address: { street: '', number: '', city: '', province: '', countryCode: '+54' }
       };
       await this.updateUserProfile(newUserProfile);
+
+      // Notificación automática al panel de administración
+      try {
+        await this.addContactMessage({
+          name: 'Sistema DNI-PETS',
+          email: email,
+          phone: 'Nuevo Registro',
+          message: `🐾 ¡Nuevo usuario registrado en la plataforma! Email: ${email}`
+        });
+      } catch (e) {
+        console.warn("No se pudo enviar notificación de nuevo registro al admin:", e);
+      }
+
       return newUserProfile;
     }
     return null;

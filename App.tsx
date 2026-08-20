@@ -25,18 +25,30 @@ const App: React.FC = () => {
   const [comercioAEditar, setComercioAEditar] = useState<any | null>(null);
   const [adminTab, setAdminTab] = useState<'comercios' | 'mensajes'>('comercios');
 
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResettingPassword(true);
+      }
     });
 
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset') === 'true') {
+      setIsResettingPassword(true);
+    }
+
     const getPetIdFromUrl = () => {
-      const params = new URLSearchParams(window.location.search);
       return params.get('p') || params.get('id');
     };
 
@@ -54,6 +66,25 @@ const App: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      alert("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await petService.updatePassword(newPassword);
+      alert("¡Contraseña actualizada con éxito! Ya puedes ingresar.");
+      setIsResettingPassword(false);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (err: any) {
+      alert("Error al actualizar contraseña: " + err.message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +113,53 @@ const App: React.FC = () => {
         onLogout={handleLogout}
         user={user}
       />
+
+      {isResettingPassword && (
+        <div className="fixed inset-0 bg-[#0d0f35]/95 backdrop-blur-md flex items-center justify-center z-[150] p-4">
+          <div className="bg-[#1c183d] w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl border border-white/10 space-y-6 animate-in fade-in zoom-in duration-300">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight">Nueva Contraseña</h2>
+              <p className="text-[#00d1c6] text-xs font-bold uppercase tracking-wider">Ingresa tu nueva contraseña para DNI-PETS</p>
+            </div>
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <div className="relative">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Nueva Contraseña (mínimo 6 caracteres)"
+                  required
+                  minLength={6}
+                  className="w-full bg-[#2a2550] border border-white/10 p-4 pr-12 rounded-2xl text-white outline-none focus:border-[#00d1c6] transition-all"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#00d1c6]"
+                >
+                  {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full bg-[#00d1c6] hover:bg-[#00b8ae] text-[#0d0f35] font-black p-4 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-sm disabled:opacity-50"
+              >
+                {resetLoading ? 'Actualizando...' : 'Establecer Contraseña'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsResettingPassword(false)}
+                className="w-full text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors"
+              >
+                Cancelar
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {showLogin && (
         <div className="fixed inset-0 bg-[#0d0f35]/95 backdrop-blur-md flex items-center justify-center z-[100] p-4">
