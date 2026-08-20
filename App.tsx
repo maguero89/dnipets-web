@@ -43,8 +43,9 @@ const App: React.FC = () => {
       }
     });
 
+    const hash = window.location.hash;
     const params = new URLSearchParams(window.location.search);
-    if (params.get('reset') === 'true') {
+    if (params.get('reset') === 'true' || hash.includes('type=recovery') || hash.includes('access_token')) {
       setIsResettingPassword(true);
     }
 
@@ -66,6 +67,19 @@ const App: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleAdminRecoverPassword = async () => {
+    if (!email) {
+      alert("Por favor, ingresa tu correo electrónico primero.");
+      return;
+    }
+    try {
+      await petService.recoverPassword(email);
+      alert(`Enviamos las instrucciones a ${email}. Revisa tu correo.`);
+    } catch (err: any) {
+      alert("Error al solicitar recuperación: " + err.message);
+    }
+  };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,6 +203,15 @@ const App: React.FC = () => {
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#00d1c6] transition-colors p-1"
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={handleAdminRecoverPassword}
+                    className="text-[10px] text-slate-400 hover:text-[#00d1c6] transition-colors"
+                  >
+                    ¿Olvidaste tu contraseña?
                   </button>
                 </div>
               </div>
