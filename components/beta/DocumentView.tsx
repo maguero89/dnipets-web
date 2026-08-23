@@ -20,6 +20,7 @@ import {
 import { petService } from '../../services/petService';
 import { RealIdCard } from '../ui/RealIdCard';
 import { RecordModal } from '../modals/RecordModal';
+import { EditPetModal } from '../modals/EditPetModal';
 
 interface DocumentViewProps {
   pet: Pet;
@@ -36,6 +37,9 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [recordTypeToAdd, setRecordTypeToAdd] = useState<RecordType>('vaccine');
   const [editingRecord, setEditingRecord] = useState<HealthRecord | undefined>(undefined);
+
+  // Modal de Edición de Mascota
+  const [isEditPetModalOpen, setIsEditPetModalOpen] = useState(false);
 
   // States for PIN modal
   const [showPinModal, setShowPinModal] = useState(false);
@@ -184,7 +188,11 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
           <ArrowLeft size={20} />
         </button>
         <span className="text-brand-navy font-bold text-lg">{pet.name}</span>
-        <button className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors">
+        <button 
+          onClick={() => setIsEditPetModalOpen(true)}
+          className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors shadow-sm active:scale-95"
+          title="Editar perfil y foto"
+        >
           <Settings size={20} />
         </button>
       </div>
@@ -400,6 +408,18 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
         type={recordTypeToAdd}
         initialRecord={editingRecord}
         onSave={handleSaveRecord}
+      />
+
+      <EditPetModal
+        pet={pet}
+        isOpen={isEditPetModalOpen}
+        onClose={() => setIsEditPetModalOpen(false)}
+        onSaved={(updatedPet) => {
+          setPet(updatedPet);
+        }}
+        onDeleted={() => {
+          onBack();
+        }}
       />
 
       {/* PIN CONFIRMATION MODAL */}

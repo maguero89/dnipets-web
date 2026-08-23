@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 // Mantenemos tus tipos para que el resto de la app siga funcionando
 import { Pet, HealthRecord, UserProfile, ContactMessage, Establishment } from '../types';
+import { processImageFile, dataURLtoBlob } from '../utils/imageUtils';
 
 // Tus credenciales oficiales de Supabase
 const SUPABASE_URL = 'https://totbrjiujqnnybgvhdaz.supabase.co';
@@ -572,15 +573,63 @@ class PetService {
 
   // --- FILE UPLOADS ---
 
+  async uploadPetPhoto(file: File): Promise<string> {
+    try {
+      // 1. Procesar y convertir la foto (soporte iPhone / HEIC / compresión)
+      const compressedDataUrl = await processImageFile(file, 1000, 0.85);
+
+      // 2. Intentar subir la imagen comprimida a Supabase Storage
+      try {
+        const blob = dataURLtoBlob(compressedDataUrl);
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
+        const filePath = `pets/${fileName}`;
+
+        // Intentar bucket 'pets' primero o 'health-records' como respaldo
+        let uploadBucket = 'pets';
+        let { data, error } = await supabase.storage
+          .from('pets')
+          .upload(filePath, blob, { contentType: 'image/jpeg', cacheControl: '3600', upsert: true });
+
+        if (error && error.message.includes('not found')) {
+          uploadBucket = 'health-records';
+          const res = await supabase.storage
+            .from('health-records')
+            .upload(filePath, blob, { contentType: 'image/jpeg', cacheControl: '3600', upsert: true });
+          data = res.data;
+          error = res.error;
+        }
+
+        if (!error && data) {
+          const { data: publicUrlData } = supabase.storage
+            .from(uploadBucket)
+            .getPublicUrl(filePath);
+
+          if (publicUrlData?.publicUrl) {
+            return publicUrlData.publicUrl;
+          }
+        }
+      } catch (storageErr) {
+        console.warn("Supabase Storage pet upload failed, fallback to DataURL:", storageErr);
+      }
+
+      // Si falla la subida a Supabase o no hay bucket, retornar el DataURL comprimido (persistente y universal)
+      return compressedDataUrl;
+    } catch (err) {
+      console.error("Error procesando foto de mascota:", err);
+      throw err;
+    }
+  }
+
   async uploadFile(file: File, folder: string = 'health-records'): Promise<string> {
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+      const compressedDataUrl = await processImageFile(file);
+      const blob = dataURLtoBlob(compressedDataUrl);
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
       const filePath = `${folder}/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from('health-records')
-        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+        .upload(filePath, blob, { contentType: 'image/jpeg', cacheControl: '3600', upsert: true });
 
       if (!error && data) {
         const { data: publicUrlData } = supabase.storage
@@ -595,13 +644,7 @@ class PetService {
       console.warn("Supabase Storage upload fallback to DataURL:", err);
     }
 
-    // Fallback: Read as Base64 / Data URL
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
+    return await processImageFile(file);
   }
 
   // --- PUBLIC ACCESS & COMMUNITY ---

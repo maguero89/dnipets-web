@@ -10,6 +10,7 @@ interface BetaAddPetProps {
 
 export const BetaAddPet: React.FC<BetaAddPetProps> = ({ onBack, onSaved }) => {
   const [loading, setLoading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     species: 'dog',
@@ -17,15 +18,21 @@ export const BetaAddPet: React.FC<BetaAddPetProps> = ({ onBack, onSaved }) => {
     breed: '',
     weight: '',
     birthDate: '',
-    photoUrl: '' // In a real app this would handle the file upload
+    photoUrl: ''
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      // Fake processing for Beta (using a fake object URL or relying on user not uploading real image for now)
       const file = e.target.files[0];
-      const objectUrl = URL.createObjectURL(file);
-      setFormData({ ...formData, photoUrl: objectUrl });
+      setUploadingPhoto(true);
+      try {
+        const photoUrl = await petService.uploadPetPhoto(file);
+        setFormData(prev => ({ ...prev, photoUrl }));
+      } catch (err: any) {
+        alert("Error al subir la foto: " + (err.message || err));
+      } finally {
+        setUploadingPhoto(false);
+      }
     }
   };
 
@@ -98,7 +105,7 @@ export const BetaAddPet: React.FC<BetaAddPetProps> = ({ onBack, onSaved }) => {
                   formData.photoUrl ? 'border-[#00D1C6] text-[#00D1C6] bg-[#00D1C6]/5' : 'border-slate-300 text-slate-500 hover:bg-slate-50'
                 }`}>
                   <ImageIcon size={24} />
-                  <span className="text-xs font-bold">{formData.photoUrl ? 'Foto Cargada' : 'Abrir Galería'}</span>
+                  <span className="text-xs font-bold">{uploadingPhoto ? 'Procesando foto...' : formData.photoUrl ? 'Foto Cargada ✓' : 'Abrir Galería'}</span>
                 </div>
               </div>
             </div>

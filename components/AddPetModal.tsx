@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { petService } from '../services/petService';
 import { Pet } from '../types';
-import { X, Save, ShieldAlert } from 'lucide-react';
+import { X, Save, ShieldAlert, Upload, Loader2 } from 'lucide-react';
 
 interface AddPetModalProps {
   onClose: () => void;
@@ -10,6 +10,7 @@ interface AddPetModalProps {
 
 export const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onAdded }) => {
   const [loading, setLoading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     species: 'dog',
@@ -138,14 +139,41 @@ export const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onAdded }) =>
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">URL de Foto (Opcional)</label>
-            <input 
-              type="url" 
-              className="w-full bg-[#2a2550] border border-white/5 p-4 rounded-2xl text-white outline-none focus:border-[#00d1c6]/50 transition-all text-xs" 
-              placeholder="https://ejemplo.com/foto.jpg" 
-              value={formData.photoUrl}
-              onChange={(e) => setFormData({...formData, photoUrl: e.target.value})}
-            />
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Foto de la Mascota</label>
+            <div className="flex flex-col gap-2">
+              <label className="cursor-pointer bg-[#2a2550] border border-[#00d1c6]/30 hover:bg-[#00d1c6]/10 p-4 rounded-2xl text-white flex items-center justify-center gap-2 text-xs font-bold transition-all">
+                {uploadingPhoto ? <Loader2 className="animate-spin text-[#00d1c6]" size={18} /> : <Upload size={18} className="text-[#00d1c6]" />}
+                <span>{uploadingPhoto ? 'Procesando Foto de iPhone/Galería...' : 'Subir Foto desde Galería / Cámara'}</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setUploadingPhoto(true);
+                      try {
+                        const photoUrl = await petService.uploadPetPhoto(file);
+                        setFormData(prev => ({ ...prev, photoUrl }));
+                      } catch (err: any) {
+                        alert("Error al subir foto: " + (err.message || err));
+                      } finally {
+                        setUploadingPhoto(false);
+                      }
+                    }
+                  }} 
+                  className="hidden" 
+                  disabled={uploadingPhoto}
+                />
+              </label>
+
+              <input 
+                type="text" 
+                className="w-full bg-[#2a2550] border border-white/5 p-3 rounded-xl text-white outline-none focus:border-[#00d1c6]/50 transition-all text-xs placeholder:text-slate-500" 
+                placeholder="O pega una URL de imagen (opcional)" 
+                value={formData.photoUrl}
+                onChange={(e) => setFormData({...formData, photoUrl: e.target.value})}
+              />
+            </div>
           </div>
 
           <button 

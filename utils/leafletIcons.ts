@@ -57,7 +57,7 @@ export const createAdoptionPetIcon = () => L.divIcon({
 });
 
 // 3. MARCADOR GENERAL DE MASCOTA (Función Helper)
-export const createPetMarkerIcon = (photoUrl: string, status: 'lost' | 'adoption', name: string) => {
+export const createPetMarkerIcon = (photoUrl: string, status: string, name: string) => {
   if (status === 'lost') return createLostPetIcon();
   return createAdoptionPetIcon();
 };
