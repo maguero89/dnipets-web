@@ -100,18 +100,11 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // CORRECCIÓN 2: Usar variable de entorno VITE_
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      
-      if (!apiKey) {
-        throw new Error("Falta la API Key en .env.local");
-      }
-
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyAHv_Ve7IBZIn4eOL5xNInL1_to4sFv-dk';
       const genAI = new GoogleGenerativeAI(apiKey);
       
-      // CORRECCIÓN 3: Usar modelo estable "gemini-1.5-flash"
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash",
         systemInstruction: "Eres un asistente veterinario experto para la app DNIPETS. Eres amable, breve y empático. Das consejos útiles sobre salud, pero SIEMPRE aclaras que 'esto no sustituye una consulta veterinaria' si el caso parece grave. Identificas razas de perros y gatos."
       });
 

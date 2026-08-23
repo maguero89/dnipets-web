@@ -86,22 +86,28 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
     setIsTyping(true);
 
     try {
-      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.GEMINI_API_KEY || '';
+      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || 
+                     (import.meta as any).env?.GEMINI_API_KEY || 
+                     'AIzaSyAHv_Ve7IBZIn4eOL5xNInL1_to4sFv-dk';
       
-      if (!apiKey) {
-        setMessages(prev => [...prev, {
-          id: (Date.now() + 1).toString(),
-          role: 'model',
-          text: '⚠️ Faltan las credenciales de VetAI. Recuerda que ante cualquier síntoma o emergencia debes consultar siempre con un médico veterinario presencial.'
-        }]);
-        return;
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const systemInstruction = 'Eres VetAI, el asistente veterinario inteligente oficial de la aplicación DNIPETS. Tu tono es cálido, profesional, empático y claro. Ayudas a los dueños con nutrición, vacunación, conducta y cuidados básicos para sus perros y gatos. Identificas razas y analizas posibles síntomas a partir de imágenes. SIEMPRE debes recordar amablemente que tus consejos no reemplazan la atención médica veterinaria presencial.';
+
+      const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-pro'];
+      let model: any = null;
+      
+      for (const modelName of modelsToTry) {
+        try {
+          model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
+          break;
+        } catch (e) {
+          console.warn(`Failed with ${modelName}, trying next...`);
+        }
       }
 
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        systemInstruction: 'Eres VetAI, el asistente veterinario inteligente oficial de la aplicación DNIPETS. Tu tono es cálido, profesional, empático y claro. Ayudas a los dueños con nutrición, vacunación, conducta y cuidados básicos para sus perros y gatos. Identificas razas y analizas posibles síntomas a partir de imágenes. SIEMPRE debes recordar amablemente que tus consejos no reemplazan la atención médica veterinaria presencial.'
-      });
+      if (!model) {
+        model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', systemInstruction });
+      }
 
       const promptParts: any[] = [];
       if (userText) promptParts.push(userText);
@@ -128,7 +134,7 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'model',
-        text: 'Ocurrió un inconveniente temporal al conectar con VetAI. Por favor vuelve a intentarlo.'
+        text: 'Ocurrió un inconveniente al procesar la respuesta de VetAI (' + (err.message || 'error de conexión') + '). Por favor inténtalo nuevamente.'
       }]);
     } finally {
       setIsTyping(false);
