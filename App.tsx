@@ -58,7 +58,9 @@ const App: React.FC = () => {
       petService.getPublicPetData(petId)
         .then((result) => {
           if (result) {
-            setScannedPet(result.pet);
+            const overrideStatus = params.get('status');
+            const pet = overrideStatus ? { ...result.pet, status: overrideStatus as any } : result.pet;
+            setScannedPet(pet);
             setScannedOwner(result.owner);
           }
         })
