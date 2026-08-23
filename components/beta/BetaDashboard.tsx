@@ -62,20 +62,20 @@ export const BetaDashboard: React.FC<BetaDashboardProps> = ({
         {onOpenVetAI && (
           <div 
             onClick={onOpenVetAI}
-            className="bg-gradient-to-r from-[#0d0f35] to-[#1c183d] text-white rounded-2xl p-4 flex items-center justify-between shadow-lg border border-white/10 cursor-pointer hover:border-[#00D1C6]/50 transition-all group active:scale-95"
+            className="bg-[#0d1b40] hover:bg-[#0c183b] text-white rounded-2xl p-4 flex items-center justify-between shadow-lg border border-white/10 cursor-pointer transition-all group active:scale-98 mb-6"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#00D1C6]/20 flex items-center justify-center text-[#00D1C6] border border-[#00D1C6]/30">
-                <Bot size={26} className="animate-pulse" />
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-[#00D1C6] border border-white/5 shrink-0">
+                <Bot size={24} />
               </div>
               <div>
-                <h3 className="font-black text-sm tracking-tight text-white flex items-center gap-2">
-                  Asistente VetAI <span className="bg-[#00D1C6] text-[#0d0f35] text-[9px] font-black uppercase px-2 py-0.5 rounded-md">Gemini IA</span>
+                <h3 className="font-bold text-base tracking-tight text-white leading-tight">
+                  Chat VetAI
                 </h3>
-                <p className="text-xs text-slate-300">Consultas de salud y razas en tiempo real</p>
+                <p className="text-xs text-slate-300 font-normal mt-0.5">Asistente veterinario 24/7</p>
               </div>
             </div>
-            <ChevronRight size={20} className="text-[#00D1C6] group-hover:translate-x-1 transition-transform" />
+            <ChevronRight size={20} className="text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
           </div>
         )}
 
