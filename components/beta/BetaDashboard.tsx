@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { UserProfile, Pet } from '../../types';
 import { petService } from '../../services/petService';
-import { ChevronRight, Home, Map, Heart, User, Loader2, Plus } from 'lucide-react';
+import { ChevronRight, Home, Map, Heart, User, Loader2, Plus, Bot } from 'lucide-react';
 import { PawPrintBackground } from '../PawPrintBackground';
 
 interface BetaDashboardProps {
@@ -11,6 +11,7 @@ interface BetaDashboardProps {
   onViewProfile: () => void;
   onViewMap?: () => void;
   onViewAdoption?: () => void;
+  onOpenVetAI?: () => void;
 }
 
 export const BetaDashboard: React.FC<BetaDashboardProps> = ({ 
@@ -19,7 +20,8 @@ export const BetaDashboard: React.FC<BetaDashboardProps> = ({
   onViewPet, 
   onViewProfile, 
   onViewMap,
-  onViewAdoption 
+  onViewAdoption,
+  onOpenVetAI
 }) => {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +57,27 @@ export const BetaDashboard: React.FC<BetaDashboardProps> = ({
 
       {/* CONTENT AREA */}
       <div className="relative z-10 px-6 flex-1 overflow-y-auto pt-6 pb-24 space-y-6">
+
+        {/* VET AI ASSISTANT BANNER */}
+        {onOpenVetAI && (
+          <div 
+            onClick={onOpenVetAI}
+            className="bg-gradient-to-r from-[#0d0f35] to-[#1c183d] text-white rounded-2xl p-4 flex items-center justify-between shadow-lg border border-white/10 cursor-pointer hover:border-[#00D1C6]/50 transition-all group active:scale-95"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-[#00D1C6]/20 flex items-center justify-center text-[#00D1C6] border border-[#00D1C6]/30">
+                <Bot size={26} className="animate-pulse" />
+              </div>
+              <div>
+                <h3 className="font-black text-sm tracking-tight text-white flex items-center gap-2">
+                  Asistente VetAI <span className="bg-[#00D1C6] text-[#0d0f35] text-[9px] font-black uppercase px-2 py-0.5 rounded-md">Gemini IA</span>
+                </h3>
+                <p className="text-xs text-slate-300">Consultas de salud y razas en tiempo real</p>
+              </div>
+            </div>
+            <ChevronRight size={20} className="text-[#00D1C6] group-hover:translate-x-1 transition-transform" />
+          </div>
+        )}
 
         {/* PETS LIST SECTION */}
         <div>

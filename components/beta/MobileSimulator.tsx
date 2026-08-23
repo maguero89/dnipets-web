@@ -9,13 +9,14 @@ import { BetaUserProfile } from './BetaUserProfile';
 import { DocumentView } from './DocumentView';
 import { BetaMapView } from './BetaMapView';
 import { BetaAdoptionView } from './BetaAdoptionView';
+import { BetaVetAIAssistant } from './BetaVetAIAssistant';
 import { UserProfile, Pet } from '../../types';
 
 interface MobileSimulatorProps {
   onClose: () => void;
 }
 
-type AppState = 'loading' | 'auth' | 'onboarding' | 'dashboard' | 'add_pet' | 'view_pet' | 'view_profile' | 'map' | 'adoption';
+type AppState = 'loading' | 'auth' | 'onboarding' | 'dashboard' | 'add_pet' | 'view_pet' | 'view_profile' | 'map' | 'adoption' | 'vet_ai';
 
 export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => {
   const [appState, setAppState] = useState<AppState>('loading');
@@ -116,6 +117,7 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => 
               onViewProfile={() => setAppState('view_profile')}
               onViewMap={() => setAppState('map')}
               onViewAdoption={() => setAppState('adoption')}
+              onOpenVetAI={() => setAppState('vet_ai')}
             />
           )}
 
@@ -178,6 +180,10 @@ export const MobileSimulator: React.FC<MobileSimulatorProps> = ({ onClose }) => 
                 </button>
               </div>
             </div>
+          )}
+
+          {appState === 'vet_ai' && (
+            <BetaVetAIAssistant onBack={() => setAppState('dashboard')} />
           )}
           
         </div>
