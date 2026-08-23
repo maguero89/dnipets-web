@@ -15,14 +15,30 @@ export const BetaUserProfile: React.FC<BetaUserProfileProps> = ({ profile, onBac
   const [loading, setLoading] = useState(false);
 
   const handleSavePin = async () => {
-    if (pin.length !== 4) return alert("El PIN debe tener 4 dígitos.");
+    if (pin.length !== 4) return alert("El PIN debe tener exactamente 4 dígitos numéricos.");
     setLoading(true);
     try {
       await petService.updateUserProfile({ ...profile, securityPin: pin });
+      profile.securityPin = pin;
       setEditingPin(false);
-      alert("PIN actualizado con éxito.");
+      alert("¡PIN de Seguridad actualizado con éxito!");
     } catch (e: any) {
-      alert("Error: " + e.message);
+      alert("Error al actualizar PIN: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPinToDefault = async () => {
+    setLoading(true);
+    try {
+      await petService.updateUserProfile({ ...profile, securityPin: '0000' });
+      setPin('0000');
+      profile.securityPin = '0000';
+      setEditingPin(false);
+      alert("¡PIN restablecido con éxito a '0000'!");
+    } catch (e: any) {
+      alert("Error al restablecer PIN: " + e.message);
     } finally {
       setLoading(false);
     }
@@ -67,7 +83,6 @@ export const BetaUserProfile: React.FC<BetaUserProfileProps> = ({ profile, onBac
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-bold text-[#0d0f35]">Datos Personales</h3>
-            <button className="text-[#00D1C6] font-bold text-sm">Editar</button>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -106,34 +121,56 @@ export const BetaUserProfile: React.FC<BetaUserProfileProps> = ({ profile, onBac
               <div className="ml-3 flex-1">
                 <p className="font-bold text-[#0d0f35]">PIN de Seguridad</p>
                 <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
-                  Confirmación para Modo Perdido. <br/> (Por defecto es 0000)
+                  PIN actual: <span className="font-mono font-bold text-brand-navy">{profile.securityPin || '0000'}</span>. <br/> Haz clic para cambiarlo o restablecerlo.
                 </p>
               </div>
-              <span className="text-slate-300 font-bold ml-2">{'>'}</span>
+              <span className="text-slate-400 font-bold text-xs bg-slate-200 px-3 py-1.5 rounded-lg ml-2">Cambiar</span>
             </button>
           ) : (
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col gap-3">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col gap-4">
               <div className="flex justify-between items-center">
-                <p className="font-bold text-[#0d0f35] text-sm">Nuevo PIN (4 dígitos)</p>
+                <p className="font-bold text-[#0d0f35] text-sm">Cambiar PIN de Seguridad</p>
                 <button onClick={() => setEditingPin(false)} className="text-slate-400 hover:text-slate-600"><X size={18}/></button>
               </div>
-              <div className="flex gap-2">
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                  Ingresa tu Nuevo PIN (4 dígitos)
+                </label>
                 <input 
-                  type="password" 
+                  type="text" 
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   maxLength={4}
                   value={pin}
                   onChange={e => setPin(e.target.value.replace(/[^0-9]/g, ''))}
-                  className="flex-1 bg-white border border-slate-200 rounded-lg p-3 text-center text-xl font-black text-[#0d0f35] tracking-[1em] outline-none focus:border-[#00D1C6] placeholder:text-slate-200"
+                  placeholder="0000"
+                  className="w-full bg-white border border-slate-300 rounded-xl p-3.5 text-center text-2xl font-mono font-black text-[#0d0f35] tracking-[0.5em] outline-none focus:border-[#00D1C6]"
                 />
+              </div>
+
+              <div className="space-y-2 pt-1">
                 <button 
                   onClick={handleSavePin}
-                  disabled={loading}
-                  className="bg-[#00D1C6] text-white p-3 rounded-lg font-bold flex items-center justify-center shadow-sm disabled:opacity-50"
+                  disabled={loading || pin.length !== 4}
+                  className="w-full bg-[#00D1C6] hover:bg-[#00b8ae] text-[#0d0f35] font-black p-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 text-xs uppercase tracking-wider transition-colors"
                 >
-                  <Save size={20} />
+                  <Save size={16} />
+                  <span>Guardar Nuevo PIN</span>
+                </button>
+
+                <button 
+                  onClick={handleResetPinToDefault}
+                  disabled={loading}
+                  className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold p-3 rounded-xl flex items-center justify-center gap-1.5 text-xs uppercase tracking-wider transition-colors"
+                >
+                  <span>Restablecer PIN por Defecto (0000)</span>
                 </button>
               </div>
-              <p className="text-[10px] text-slate-500">Este PIN te será solicitado para confirmar si quieres reportar a una mascota como perdida, evitando toques accidentales.</p>
+
+              <p className="text-[10px] text-slate-500 leading-tight">
+                Este PIN de 4 dígitos te será solicitado al cambiar el estado de tu mascota a Modo Perdido o Adopción para evitar cambios accidentales.
+              </p>
             </div>
           )}
         </div>

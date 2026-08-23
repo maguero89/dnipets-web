@@ -67,6 +67,18 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
     setShowPinModal(true);
   };
 
+  const handleQuickResetPin = async () => {
+    try {
+      await petService.updateUserProfile({ ...profile, securityPin: '0000' });
+      profile.securityPin = '0000';
+      setPinInput('0000');
+      setPinError('');
+      alert("¡PIN de Seguridad restablecido con éxito a '0000'!");
+    } catch (e: any) {
+      alert("Error al restablecer PIN: " + e.message);
+    }
+  };
+
   // CAPTURA Y FIJACIÓN ESTÁTICA DE COORDENADAS GPS AL REPORTAR PÉRDIDA O ADOPCIÓN
   const confirmPinAndExecute = async () => {
     const requiredPin = profile.securityPin || '0000';
@@ -453,6 +465,13 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ pet: initialPet, pro
               className="w-full bg-primary hover:bg-primary-dark text-white font-bold p-4 rounded-xl transition-colors mt-2"
             >
               Confirmar
+            </button>
+            <button 
+              type="button"
+              onClick={handleQuickResetPin}
+              className="w-full text-slate-400 hover:text-primary text-[11px] font-bold text-center mt-3 uppercase tracking-wider block"
+            >
+              ¿Olvidaste tu PIN? Restablecer a 0000
             </button>
           </div>
         </div>
