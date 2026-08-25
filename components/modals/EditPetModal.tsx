@@ -141,7 +141,7 @@ export const EditPetModal: React.FC<EditPetModalProps> = ({
                 <span className="text-[10px] font-bold uppercase tracking-wider">Cambiar Foto</span>
                 <input 
                   type="file" 
-                  accept="image/*" 
+                  accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" 
                   onChange={handlePhotoFileChange} 
                   className="hidden" 
                   disabled={uploadingPhoto}
@@ -155,7 +155,7 @@ export const EditPetModal: React.FC<EditPetModalProps> = ({
                 {uploadingPhoto ? 'Procesando...' : 'Seleccionar Foto / Galería'}
                 <input 
                   type="file" 
-                  accept="image/*" 
+                  accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" 
                   onChange={handlePhotoFileChange} 
                   className="hidden" 
                   disabled={uploadingPhoto}

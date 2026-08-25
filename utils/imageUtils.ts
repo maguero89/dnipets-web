@@ -1,30 +1,21 @@
 /**
- * Convierte y comprime cualquier archivo de imagen (incluyendo HEIC / fotos de iPhone o PNGs pesados)
+ * Convierte y comprime cualquier archivo de imagen (incluyendo fotos pesadas de Xiaomi/Redmi/Poco 50MP/108MP, HEIC de iPhone o PNGs)
  * a un DataURL en formato JPEG de resolución optimizada (máx 1000px).
+ * Usa URL.createObjectURL para evitar picos de memoria en navegadores móviles.
  */
 export async function processImageFile(file: File, maxWidth: number = 1000, quality: number = 0.85): Promise<string> {
-  return new Promise((resolve, reject) => {
-    // Si el archivo no es de tipo imagen, intentar leerlo normalmente
-    if (file && !file.type.startsWith('image/') && !file.name.match(/\.(heic|heif|png|jpg|jpeg|webp)$/i)) {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (err) => reject(err);
-      reader.readAsDataURL(file);
-      return;
-    }
+  if (!file) throw new Error("No se seleccionó ningún archivo de imagen.");
 
-    const reader = new FileReader();
-    reader.onerror = (err) => reject(err);
-    reader.onload = (e) => {
+  return new Promise((resolve, reject) => {
+    // 1. Método preferido de bajo consumo de memoria: URL.createObjectURL
+    try {
+      const objectUrl = URL.createObjectURL(file);
       const img = new Image();
-      img.onerror = (err) => {
-        // Fallback: Si no se puede renderizar en canvas, devolver resultado base64 directo
-        resolve(e.target?.result as string);
-      };
+
       img.onload = () => {
         try {
-          let width = img.width;
-          let height = img.height;
+          let width = img.width || 800;
+          let height = img.height || 600;
 
           // Redimensionar manteniendo aspecto si supera el ancho máximo
           if (width > maxWidth) {
@@ -38,7 +29,8 @@ export async function processImageFile(file: File, maxWidth: number = 1000, qual
 
           const ctx = canvas.getContext('2d');
           if (!ctx) {
-            resolve(e.target?.result as string);
+            URL.revokeObjectURL(objectUrl);
+            fallbackFileReader(file, resolve, reject);
             return;
           }
 
@@ -49,17 +41,39 @@ export async function processImageFile(file: File, maxWidth: number = 1000, qual
 
           // Exportar como JPEG comprimido
           const jpegDataUrl = canvas.toDataURL('image/jpeg', quality);
+          URL.revokeObjectURL(objectUrl);
           resolve(jpegDataUrl);
-        } catch (err) {
-          resolve(e.target?.result as string);
+        } catch (canvasErr) {
+          console.warn("Error en Canvas resizing, usando fallback FileReader:", canvasErr);
+          URL.revokeObjectURL(objectUrl);
+          fallbackFileReader(file, resolve, reject);
         }
       };
 
-      img.src = e.target?.result as string;
-    };
+      img.onerror = (err) => {
+        console.warn("Error cargando imageObject, usando fallback FileReader:", err);
+        URL.revokeObjectURL(objectUrl);
+        fallbackFileReader(file, resolve, reject);
+      };
 
-    reader.readAsDataURL(file);
+      img.src = objectUrl;
+    } catch (e) {
+      fallbackFileReader(file, resolve, reject);
+    }
   });
+}
+
+function fallbackFileReader(file: File, resolve: (val: string) => void, reject: (err: any) => void) {
+  const reader = new FileReader();
+  reader.onerror = (err) => reject(new Error("No se pudo leer el archivo de la galería."));
+  reader.onload = (e) => {
+    if (e.target?.result) {
+      resolve(e.target.result as string);
+    } else {
+      reject(new Error("No se obtuvo contenido de la imagen."));
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 /**

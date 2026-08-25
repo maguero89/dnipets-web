@@ -83,29 +83,38 @@ export const BetaAddPet: React.FC<BetaAddPetProps> = ({ onBack, onSaved }) => {
           
           {/* FOTO */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Foto</label>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Foto de la Mascota</label>
             <div className="grid grid-cols-2 gap-4">
-              <button 
-                type="button"
-                disabled
-                className="border-2 border-dashed border-[#00D1C6]/30 bg-[#00D1C6]/5 text-[#00D1C6] rounded-2xl py-6 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed"
-              >
-                <Camera size={24} />
-                <span className="text-xs font-bold">Usar Cámara</span>
-              </button>
-              
+              {/* TOMAR FOTO CON CÁMARA */}
               <div className="relative">
                 <input 
                   type="file" 
-                  accept="image/*" 
+                  accept="image/*"
+                  capture="environment"
                   onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={uploadingPhoto}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
-                <div className={`border-2 border-dashed rounded-2xl py-6 flex flex-col items-center gap-2 transition-colors ${
+                <div className="border-2 border-dashed border-[#00D1C6]/50 bg-[#00D1C6]/5 text-[#00D1C6] rounded-2xl py-6 flex flex-col items-center justify-center gap-2 hover:bg-[#00D1C6]/10 transition-colors">
+                  <Camera size={24} />
+                  <span className="text-xs font-bold text-center">Usar Cámara</span>
+                </div>
+              </div>
+              
+              {/* ABRIR GALERÍA */}
+              <div className="relative">
+                <input 
+                  type="file" 
+                  accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" 
+                  onChange={handleFileChange}
+                  disabled={uploadingPhoto}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div className={`border-2 border-dashed rounded-2xl py-6 flex flex-col items-center justify-center gap-2 transition-colors ${
                   formData.photoUrl ? 'border-[#00D1C6] text-[#00D1C6] bg-[#00D1C6]/5' : 'border-slate-300 text-slate-500 hover:bg-slate-50'
                 }`}>
                   <ImageIcon size={24} />
-                  <span className="text-xs font-bold">{uploadingPhoto ? 'Procesando foto...' : formData.photoUrl ? 'Foto Cargada ✓' : 'Abrir Galería'}</span>
+                  <span className="text-xs font-bold text-center">{uploadingPhoto ? 'Procesando...' : formData.photoUrl ? 'Foto Cargada ✓' : 'Abrir Galería'}</span>
                 </div>
               </div>
             </div>

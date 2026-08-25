@@ -146,7 +146,7 @@ export const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onAdded }) =>
                 <span>{uploadingPhoto ? 'Procesando Foto de iPhone/Galería...' : 'Subir Foto desde Galería / Cámara'}</span>
                 <input 
                   type="file" 
-                  accept="image/*" 
+                  accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" 
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
