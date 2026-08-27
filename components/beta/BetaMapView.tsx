@@ -214,6 +214,7 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
           {/* ESTABLECIMIENTOS / COMERCIOS MARKERS */}
           {establishments.map(est => {
             const iconToUse = createEstablishmentMarkerIcon(est.nombre, est.rubro);
+            const reviewText = est.resena || est.comentario || est.comentarios || est.descripcion || est.notes;
 
             return (
               <Marker key={est.id} position={[est.lat, est.lng]} icon={iconToUse}>
@@ -226,7 +227,7 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
                       <h4 className="font-black text-[#0d0f35] text-xs leading-tight uppercase">{est.nombre}</h4>
                     </div>
                     {est.direccion && <p className="text-[10px] text-slate-500 font-medium mb-1">{est.direccion}</p>}
-                    {est.resena && <p className="text-[10px] text-slate-400 italic mb-2">"{est.resena}"</p>}
+                    {reviewText && <p className="text-[10px] text-slate-400 italic mb-2">"{reviewText}"</p>}
                     {est.telefono && (
                       <a
                         href={`tel:${est.telefono}`}

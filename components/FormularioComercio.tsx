@@ -53,21 +53,32 @@ export const FormularioComercio: React.FC<Props> = ({
         };
 
         if (comercioAEditar) {
-            const { error } = await supabase
+            const { data, error } = await supabase
                 .from('comercios')
                 .update(payload)
-                .eq('id', comercioAEditar.id);
+                .eq('id', comercioAEditar.id)
+                .select();
 
-            if (error) alert("Error al actualizar: " + error.message);
-            else {
+            if (error) {
+                alert("Error al actualizar: " + error.message);
+            } else if (!data || data.length === 0) {
+                alert("⚠️ Atención: No se pudo actualizar el comercio en Supabase. Recuerda ejecutar la política RLS de UPDATE en tu consola de Supabase.");
+            } else {
                 alert("Comercio actualizado correctamente");
                 onCancelarEdicion();
                 onComercioGuardado();
             }
         } else {
-            const { error } = await supabase.from('comercios').insert([payload]);
-            if (error) alert("Error al guardar: " + error.message);
-            else {
+            const { data, error } = await supabase
+                .from('comercios')
+                .insert([payload])
+                .select();
+
+            if (error) {
+                alert("Error al guardar: " + error.message);
+            } else if (!data || data.length === 0) {
+                alert("⚠️ Atención: No se pudo guardar el comercio. Verifica las políticas RLS en Supabase.");
+            } else {
                 alert("¡Comercio registrado con éxito!");
                 setFormData({ nombre: '', rubro: 'veterinaria', direccion: '', lat: '', lng: '', telefono: '', resena: '' });
                 onComercioGuardado();

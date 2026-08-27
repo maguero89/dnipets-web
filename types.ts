@@ -96,5 +96,9 @@ export interface Establishment {
   lng: number;
   telefono?: string;
   resena?: string;
+  comentario?: string;
+  comentarios?: string;
+  descripcion?: string;
+  notes?: string;
 }
 
