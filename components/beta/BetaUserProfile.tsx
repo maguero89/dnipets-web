@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { UserProfile } from '../../types';
 import { petService } from '../../services/petService';
-import { Home, Map, Heart, User, Key, LogOut, Save, X } from 'lucide-react';
+import { Home, Map as MapIcon, Heart, User, Key, LogOut, Save, X } from 'lucide-react';
+import { COUNTRY_CODES, formatWhatsAppPhone } from '../../utils/phoneUtils';
 
 interface BetaUserProfileProps {
   profile: UserProfile;
@@ -11,8 +12,46 @@ interface BetaUserProfileProps {
 
 export const BetaUserProfile: React.FC<BetaUserProfileProps> = ({ profile, onBackToHome, onLogout }) => {
   const [editingPin, setEditingPin] = useState(false);
+  const [editingPersonal, setEditingPersonal] = useState(false);
   const [pin, setPin] = useState(profile.securityPin || '0000');
   const [loading, setLoading] = useState(false);
+
+  // Formulario Datos Personales
+  const [firstName, setFirstName] = useState(profile.firstName || '');
+  const [lastName, setLastName] = useState(profile.lastName || '');
+  const [countryCode, setCountryCode] = useState(profile.address?.countryCode || '+549');
+  const [phone, setPhone] = useState(profile.phone || '');
+
+  const handleSavePersonal = async () => {
+    setLoading(true);
+    try {
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const updatedProfile: UserProfile = {
+        ...profile,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: cleanPhone,
+        address: {
+          ...(profile.address || { street: '', number: '', city: '', province: '' }),
+          countryCode: countryCode
+        }
+      };
+
+      await petService.updateUserProfile(updatedProfile);
+      profile.firstName = firstName.trim();
+      profile.lastName = lastName.trim();
+      profile.phone = cleanPhone;
+      if (!profile.address) profile.address = { street: '', number: '', city: '', province: '', countryCode };
+      profile.address.countryCode = countryCode;
+
+      setEditingPersonal(false);
+      alert("¡Datos Personales actualizados con éxito!");
+    } catch (e: any) {
+      alert("Error al actualizar datos: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSavePin = async () => {
     if (pin.length !== 4) return alert("El PIN debe tener exactamente 4 dígitos numéricos.");
@@ -83,30 +122,106 @@ export const BetaUserProfile: React.FC<BetaUserProfileProps> = ({ profile, onBac
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-bold text-[#0d0f35]">Datos Personales</h3>
+            <button 
+              onClick={() => setEditingPersonal(!editingPersonal)} 
+              className="text-xs font-bold text-[#00D1C6] hover:text-[#00b8ae] bg-[#00D1C6]/10 px-3 py-1 rounded-lg transition-colors"
+            >
+              {editingPersonal ? 'Cancelar' : 'Editar'}
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre</p>
-              <p className="text-[#0d0f35] font-medium">{profile.firstName || '-'}</p>
+          {!editingPersonal ? (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre</p>
+                  <p className="text-[#0d0f35] font-medium">{profile.firstName || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Apellido</p>
+                  <p className="text-[#0d0f35] font-medium">{profile.lastName || '-'}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teléfono de Contacto</p>
+                <p className="text-[#0d0f35] font-medium flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-500">{profile.address?.countryCode || '+549'}</span>
+                  <span>{profile.phone || '-'}</span>
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Domicilio</p>
+                <p className="text-[#0d0f35] font-medium">
+                  {profile.address?.street ? `${profile.address.street} ${profile.address.number || ''}, ${profile.address.city || ''}` : '-'}
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4 pt-2 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nombre</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-[#0d0f35] outline-none focus:border-[#00D1C6]"
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Apellido</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-[#0d0f35] outline-none focus:border-[#00D1C6]"
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Código de País</label>
+                <select 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-[#0d0f35] outline-none focus:border-[#00D1C6] font-medium"
+                  value={countryCode}
+                  onChange={e => setCountryCode(e.target.value)}
+                >
+                  {COUNTRY_CODES.map(c => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.country} ({c.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                  Número de Celular (Área + Número)
+                </label>
+                <input 
+                  type="tel" 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-[#0d0f35] outline-none focus:border-[#00D1C6]"
+                  placeholder="Ej: 2613820372 (sin 0 ni 15)"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                />
+                <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                  📌 En Argentina ingresa el código de área (ej: 261) y tu número sin el 0 ni el 15. Lo formatearemos para WhatsApp.
+                </p>
+              </div>
+
+              <button 
+                onClick={handleSavePersonal}
+                disabled={loading}
+                className="w-full bg-[#00D1C6] hover:bg-[#00b8ae] text-[#0d0f35] font-black p-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm text-xs uppercase tracking-wider transition-colors"
+              >
+                <Save size={16} />
+                <span>Guardar Datos Personales</span>
+              </button>
             </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Apellido</p>
-              <p className="text-[#0d0f35] font-medium">{profile.lastName || '-'}</p>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teléfono</p>
-            <p className="text-[#0d0f35] font-medium">{profile.phone || '-'}</p>
-          </div>
-
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Domicilio</p>
-            <p className="text-[#0d0f35] font-medium">
-              {profile.address?.street ? `${profile.address.street} ${profile.address.number || ''}, ${profile.address.city || ''}` : '-'}
-            </p>
-          </div>
+          )}
         </div>
 
         {/* Seguridad Card */}
@@ -192,7 +307,7 @@ export const BetaUserProfile: React.FC<BetaUserProfileProps> = ({ profile, onBac
           <span className="text-[10px] font-medium">Inicio</span>
         </button>
         <button className="flex flex-col items-center gap-1 text-slate-400">
-          <Map size={24} />
+          <MapIcon size={24} />
           <span className="text-[10px] font-medium">Mapa</span>
         </button>
         <button className="flex flex-col items-center gap-1 text-slate-400">

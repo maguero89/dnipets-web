@@ -4,6 +4,7 @@ import { Pet, UserProfile, HealthRecord } from '../types';
 import { DniPetsLogo } from './ui/DniPetsLogo';
 import { RealIdCard } from './ui/RealIdCard';
 import { petService } from '../services/petService';
+import { formatWhatsAppPhone } from '../utils/phoneUtils';
 
 export const PublicPetProfile = ({ pet, owner, onClose, isExternal = false }: { pet: Pet, owner: UserProfile, onClose?: () => void, isExternal?: boolean }) => {
     const isLost = pet.status === 'lost';
@@ -23,11 +24,12 @@ export const PublicPetProfile = ({ pet, owner, onClose, isExternal = false }: { 
 
     const handleWhatsApp = () => {
         if (!owner.phone) return;
-        const cleanPhone = owner.phone.replace(/[^0-9]/g, '');
+        const formattedPhone = formatWhatsAppPhone(owner.phone, owner.address?.countryCode || '+549');
+        if (!formattedPhone) return;
         const message = isLost
             ? `¡Hola! Acabo de escanear el QR de ${pet.name} y parece que se ha perdido. Lo tengo conmigo.`
             : `¡Hola! Estoy interesado en adoptar a ${pet.name}. Lo vi en DNIPETS.`;
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     };
 
     const handleBack = () => {

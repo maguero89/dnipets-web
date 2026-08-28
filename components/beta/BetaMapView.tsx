@@ -24,6 +24,7 @@ import {
   createEstablishmentMarkerIcon,
   getDeterministicOffset
 } from '../../utils/leafletIcons';
+import { formatWhatsAppPhone } from '../../utils/phoneUtils';
 
 L.Marker.prototype.options.icon = defaultIcon;
 
@@ -178,6 +179,10 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
             }
 
             const iconToUse = createPetMarkerIcon(pet.photoUrl, pet.status, pet.name);
+            const formattedOwnerPhone = formatWhatsAppPhone((pet as any).ownerPhone);
+            const waUrl = formattedOwnerPhone
+              ? `https://wa.me/${formattedOwnerPhone}?text=${encodeURIComponent(`¡Hola! Vi el reporte de ${pet.name} en el mapa comunitarios de DNIPETS y tengo información.`)}`
+              : `https://wa.me/?text=${encodeURIComponent(`¡Hola! Vi el reporte de ${pet.name} en el mapa comunitarios de DNIPETS.`)}`;
 
             return (
               <Marker key={pet.id} position={position} icon={iconToUse}>
@@ -198,7 +203,7 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
                     </span>
                     
                     <a
-                      href={`https://wa.me/?text=${encodeURIComponent(`Hola, vi el reporte de ${pet.name} en el mapa de DNI-PETS.`)}`}
+                      href={waUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-2 w-full bg-[#25D366] hover:bg-[#128C7E] text-white text-[10px] font-bold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 transition-transform active:scale-95 shadow-sm text-decoration-none"

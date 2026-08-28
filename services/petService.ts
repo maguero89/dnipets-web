@@ -692,16 +692,36 @@ class PetService {
     };
   }
 
-  // Modified to fetch both LOST and ADOPTION pets for the map
+  // Modified to fetch both LOST and ADOPTION pets for the map with owner phone numbers
   async getCommunityPets(): Promise<Pet[]> {
     const { data, error } = await supabase
       .from('pets')
       .select('*')
       .in('status', ['lost', 'adoption']);
 
-    if (error) return [];
+    if (error || !data) return [];
 
-    return data.map((p: any) => this._mapPetData(p));
+    const ownerIds = [...new Set(data.map((p: any) => p.owner_id).filter(Boolean))];
+    let ownersMap: Record<string, string> = {};
+
+    if (ownerIds.length > 0) {
+      const { data: owners } = await supabase
+        .from('profiles')
+        .select('uid, phone')
+        .in('uid', ownerIds);
+
+      if (owners) {
+        owners.forEach((o: any) => {
+          if (o.uid) ownersMap[o.uid] = o.phone || '';
+        });
+      }
+    }
+
+    return data.map((p: any) => {
+      const pet = this._mapPetData(p);
+      (pet as any).ownerPhone = ownersMap[p.owner_id] || '';
+      return pet;
+    });
   }
 
   // --- CONTACT MESSAGES ---
