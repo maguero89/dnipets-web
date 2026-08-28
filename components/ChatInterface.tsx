@@ -119,7 +119,7 @@ const ChatInterface: React.FC = () => {
         timestamp: Date.now()
       }]);
 
-      const modelsToTry = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
+      const modelsToTry = ['gemini-3.5-flash', 'gemini-3.6-flash'];
       let fullText = '';
 
       for (const modelName of modelsToTry) {

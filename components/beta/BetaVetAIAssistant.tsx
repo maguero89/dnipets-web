@@ -104,7 +104,7 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
       const responseId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, { id: responseId, role: 'model', text: '...' }]);
 
-      const modelsToTry = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
+      const modelsToTry = ['gemini-3.5-flash', 'gemini-3.6-flash'];
       let successText = '';
       let lastError: any = null;
 
