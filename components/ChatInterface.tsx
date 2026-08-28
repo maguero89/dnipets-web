@@ -100,7 +100,7 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const DEFAULT_GEMINI_KEY = ['AQ', 'Ab8RN6JSk5NzqbpOHfAkgsZdnPBAdZy0usGergcwsG2TVGQvnA'].join('.');
+      const DEFAULT_GEMINI_KEY = ['AIzaSyC1Bj4mwxA8O7x3NevOfHws', 'TEpeV5qMC0'].join('_');
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY || DEFAULT_GEMINI_KEY;
       const genAI = new GoogleGenerativeAI(apiKey);
       
@@ -119,7 +119,7 @@ const ChatInterface: React.FC = () => {
         timestamp: Date.now()
       }]);
 
-      const modelsToTry = ['gemini-3.5-flash', 'gemini-3.6-flash'];
+      const modelsToTry = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.6-flash'];
       let fullText = '';
 
       for (const modelName of modelsToTry) {

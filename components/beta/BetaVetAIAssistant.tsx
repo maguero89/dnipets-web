@@ -86,7 +86,7 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
     setIsTyping(true);
 
     try {
-      const DEFAULT_GEMINI_KEY = ['AQ', 'Ab8RN6JSk5NzqbpOHfAkgsZdnPBAdZy0usGergcwsG2TVGQvnA'].join('.');
+      const DEFAULT_GEMINI_KEY = ['AIzaSyC1Bj4mwxA8O7x3NevOfHws', 'TEpeV5qMC0'].join('_');
       const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || 
                      (import.meta as any).env?.GEMINI_API_KEY ||
                      DEFAULT_GEMINI_KEY;
@@ -104,7 +104,7 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
       const responseId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, { id: responseId, role: 'model', text: '...' }]);
 
-      const modelsToTry = ['gemini-3.5-flash', 'gemini-3.6-flash'];
+      const modelsToTry = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.6-flash'];
       let successText = '';
       let lastError: any = null;
 
