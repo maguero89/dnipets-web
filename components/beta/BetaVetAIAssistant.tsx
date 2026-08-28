@@ -102,32 +102,23 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
       }
 
       const responseId = (Date.now() + 1).toString();
-      const modelsToTry = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-      let result: any = null;
-      let lastErr: any = null;
-
-      for (const modelName of modelsToTry) {
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
-          result = await model.generateContentStream(promptParts);
-          if (result) break;
-        } catch (e) {
-          lastErr = e;
-          console.warn(`Model ${modelName} failed, trying next...`, e);
-        }
-      }
-
-      if (!result) {
-        throw lastErr || new Error("No se pudo conectar con los modelos de IA.");
-      }
-
-      let fullText = '';
       setMessages(prev => [...prev, { id: responseId, role: 'model', text: '...' }]);
 
-      for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
-        fullText += chunkText;
-        setMessages(prev => prev.map(m => m.id === responseId ? { ...m, text: fullText } : m));
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash', systemInstruction });
+
+      try {
+        const result = await model.generateContentStream(promptParts);
+        let fullText = '';
+        for await (const chunk of result.stream) {
+          const chunkText = chunk.text();
+          fullText += chunkText;
+          setMessages(prev => prev.map(m => m.id === responseId ? { ...m, text: fullText } : m));
+        }
+      } catch (streamErr) {
+        console.warn("Stream error, falling back to generateContent:", streamErr);
+        const resultSync = await model.generateContent(promptParts);
+        const syncText = resultSync.response.text();
+        setMessages(prev => prev.map(m => m.id === responseId ? { ...m, text: syncText } : m));
       }
     } catch (err: any) {
       console.error('VetAI Error:', err);
