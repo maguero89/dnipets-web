@@ -100,12 +100,12 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const DEFAULT_GEMINI_KEY = ['AQ', 'Ab8RN6JU0l0A_KhLCLayo4xb0yooQLSQDbXWqzx7gyp1FrwETA'].join('.');
+      const DEFAULT_GEMINI_KEY = ['AQ', 'Ab8RN6JSk5NzqbpOHfAkgsZdnPBAdZy0usGergcwsG2TVGQvnA'].join('.');
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY || DEFAULT_GEMINI_KEY;
       const genAI = new GoogleGenerativeAI(apiKey);
       
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash",
+        model: "gemini-3.6-flash",
         systemInstruction: "Eres un asistente veterinario experto para la app DNIPETS. Eres amable, breve y empático. Das consejos útiles sobre salud, pero SIEMPRE aclaras que 'esto no sustituye una consulta veterinaria' si el caso parece grave. Identificas razas de perros y gatos."
       });
 
