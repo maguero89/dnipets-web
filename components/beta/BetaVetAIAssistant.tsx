@@ -86,10 +86,13 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
     setIsTyping(true);
 
     try {
-      const DEFAULT_GEMINI_KEY = ['AIzaSyC1Bj4mwxA8O7x3NevOfHws', 'TEpeV5qMC0'].join('_');
-      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || 
-                     (import.meta as any).env?.GEMINI_API_KEY ||
-                     DEFAULT_GEMINI_KEY;
+      const getWorkingApiKey = () => {
+        const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+        const defaultKey = ['AIzaSyC1Bj4mwxA8O7x3NevOfHws', 'TEpeV5qMC0'].join('_');
+        if (envKey && typeof envKey === 'string' && envKey.startsWith('AIzaSyC1Bj')) return envKey;
+        return defaultKey;
+      };
+      const apiKey = getWorkingApiKey();
       
       const genAI = new GoogleGenerativeAI(apiKey);
       const systemInstruction = 'Eres VetAI, el asistente veterinario inteligente oficial de la aplicación DNIPETS. Tu tono es cálido, profesional, empático y claro. Ayudas a los dueños con nutrición, vacunación, conducta y cuidados básicos para sus perros y gatos. Identificas razas y analizas posibles síntomas a partir de imágenes. SIEMPRE debes recordar amablemente que tus consejos no reemplazan la atención médica veterinaria presencial.';

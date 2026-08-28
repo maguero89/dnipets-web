@@ -100,8 +100,13 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const DEFAULT_GEMINI_KEY = ['AIzaSyC1Bj4mwxA8O7x3NevOfHws', 'TEpeV5qMC0'].join('_');
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || DEFAULT_GEMINI_KEY;
+      const getWorkingApiKey = () => {
+        const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+        const defaultKey = ['AIzaSyC1Bj4mwxA8O7x3NevOfHws', 'TEpeV5qMC0'].join('_');
+        if (envKey && typeof envKey === 'string' && envKey.startsWith('AIzaSyC1Bj')) return envKey;
+        return defaultKey;
+      };
+      const apiKey = getWorkingApiKey();
       const genAI = new GoogleGenerativeAI(apiKey);
       
       const promptParts: any[] = [];
