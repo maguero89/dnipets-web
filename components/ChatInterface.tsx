@@ -100,7 +100,7 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyAHv_Ve7IBZIn4eOL5xNInL1_to4sFv-dk';
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       const genAI = new GoogleGenerativeAI(apiKey);
       
       const model = genAI.getGenerativeModel({ 

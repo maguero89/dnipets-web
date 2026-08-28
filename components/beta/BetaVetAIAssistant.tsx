@@ -87,27 +87,14 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
 
     try {
       const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || 
-                     (import.meta as any).env?.GEMINI_API_KEY || 
-                     'AIzaSyAHv_Ve7IBZIn4eOL5xNInL1_to4sFv-dk';
+                     (import.meta as any).env?.GEMINI_API_KEY;
+
+      if (!apiKey) {
+        throw new Error("No se ha configurado la API Key de Gemini (VITE_GEMINI_API_KEY).");
+      }
       
       const genAI = new GoogleGenerativeAI(apiKey);
       const systemInstruction = 'Eres VetAI, el asistente veterinario inteligente oficial de la aplicación DNIPETS. Tu tono es cálido, profesional, empático y claro. Ayudas a los dueños con nutrición, vacunación, conducta y cuidados básicos para sus perros y gatos. Identificas razas y analizas posibles síntomas a partir de imágenes. SIEMPRE debes recordar amablemente que tus consejos no reemplazan la atención médica veterinaria presencial.';
-
-      const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-pro'];
-      let model: any = null;
-      
-      for (const modelName of modelsToTry) {
-        try {
-          model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
-          break;
-        } catch (e) {
-          console.warn(`Failed with ${modelName}, trying next...`);
-        }
-      }
-
-      if (!model) {
-        model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', systemInstruction });
-      }
 
       const promptParts: any[] = [];
       if (userText) promptParts.push(userText);
@@ -117,10 +104,25 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
       }
 
       const responseId = (Date.now() + 1).toString();
-      
-      // Streaming response
-      const result = await model.generateContentStream(promptParts);
-      
+      const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro'];
+      let result: any = null;
+      let lastErr: any = null;
+
+      for (const modelName of modelsToTry) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
+          result = await model.generateContentStream(promptParts);
+          if (result) break;
+        } catch (e) {
+          lastErr = e;
+          console.warn(`Model ${modelName} failed, trying next...`, e);
+        }
+      }
+
+      if (!result) {
+        throw lastErr || new Error("No se pudo conectar con los modelos de IA.");
+      }
+
       let fullText = '';
       setMessages(prev => [...prev, { id: responseId, role: 'model', text: '...' }]);
 
