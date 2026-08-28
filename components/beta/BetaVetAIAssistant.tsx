@@ -104,21 +104,45 @@ export const BetaVetAIAssistant: React.FC<BetaVetAIAssistantProps> = ({ onBack }
       const responseId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, { id: responseId, role: 'model', text: '...' }]);
 
-      const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash', systemInstruction });
+      const modelsToTry = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
+      let successText = '';
+      let lastError: any = null;
 
-      try {
-        const result = await model.generateContentStream(promptParts);
-        let fullText = '';
-        for await (const chunk of result.stream) {
-          const chunkText = chunk.text();
-          fullText += chunkText;
-          setMessages(prev => prev.map(m => m.id === responseId ? { ...m, text: fullText } : m));
+      for (const modelName of modelsToTry) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
+          
+          // Intentar llamada
+          try {
+            const result = await model.generateContentStream(promptParts);
+            let fullText = '';
+            for await (const chunk of result.stream) {
+              const chunkText = chunk.text();
+              fullText += chunkText;
+              setMessages(prev => prev.map(m => m.id === responseId ? { ...m, text: fullText } : m));
+            }
+            if (fullText) {
+              successText = fullText;
+              break;
+            }
+          } catch (streamErr) {
+            console.warn(`Stream failed on ${modelName}, trying generateContent:`, streamErr);
+            const resultSync = await model.generateContent(promptParts);
+            const syncText = resultSync.response.text();
+            if (syncText) {
+              successText = syncText;
+              setMessages(prev => prev.map(m => m.id === responseId ? { ...m, text: syncText } : m));
+              break;
+            }
+          }
+        } catch (mErr) {
+          lastError = mErr;
+          console.warn(`Model ${modelName} unavailable, trying fallback...`, mErr);
         }
-      } catch (streamErr) {
-        console.warn("Stream error, falling back to generateContent:", streamErr);
-        const resultSync = await model.generateContent(promptParts);
-        const syncText = resultSync.response.text();
-        setMessages(prev => prev.map(m => m.id === responseId ? { ...m, text: syncText } : m));
+      }
+
+      if (!successText && lastError) {
+        throw lastError;
       }
     } catch (err: any) {
       console.error('VetAI Error:', err);

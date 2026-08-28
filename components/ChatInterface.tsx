@@ -104,42 +104,54 @@ const ChatInterface: React.FC = () => {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY || DEFAULT_GEMINI_KEY;
       const genAI = new GoogleGenerativeAI(apiKey);
       
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-3.6-flash",
-        systemInstruction: "Eres un asistente veterinario experto para la app DNIPETS. Eres amable, breve y empático. Das consejos útiles sobre salud, pero SIEMPRE aclaras que 'esto no sustituye una consulta veterinaria' si el caso parece grave. Identificas razas de perros y gatos."
-      });
-
       const promptParts: any[] = [];
       if (input) promptParts.push(input);
-      
       if (currentImage) {
         const mimeType = currentImage.split(';')[0].split(':')[1];
         promptParts.push(fileToGenerativePart(currentImage, mimeType));
       }
 
-      // Preparar mensaje de respuesta vacío para streaming
       const responseId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, {
         id: responseId,
         role: 'model',
-        text: 'Pensando...', // Placeholder
+        text: 'Pensando...',
         timestamp: Date.now()
       }]);
 
-      // Enviar a Google Gemini
-      const result = await model.generateContentStream(promptParts);
-
+      const modelsToTry = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
       let fullText = '';
-      
-      // Procesar el stream de respuesta
-      for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
-        fullText += chunkText;
-        
-        // Actualizar el mensaje en tiempo real
-        setMessages(prev => prev.map(msg => 
-            msg.id === responseId ? { ...msg, text: fullText } : msg
-        ));
+
+      for (const modelName of modelsToTry) {
+        try {
+          const model = genAI.getGenerativeModel({ 
+            model: modelName,
+            systemInstruction: "Eres un asistente veterinario experto para la app DNIPETS. Eres amable, breve y empático. Das consejos útiles sobre salud, pero SIEMPRE aclaras que 'esto no sustituye una consulta veterinaria' si el caso parece grave. Identificas razas de perros y gatos."
+          });
+
+          try {
+            const result = await model.generateContentStream(promptParts);
+            for await (const chunk of result.stream) {
+              const chunkText = chunk.text();
+              fullText += chunkText;
+              setMessages(prev => prev.map(msg => 
+                msg.id === responseId ? { ...msg, text: fullText } : msg
+              ));
+            }
+            if (fullText) break;
+          } catch (sErr) {
+            const resultSync = await model.generateContent(promptParts);
+            const syncText = resultSync.response.text();
+            if (syncText) {
+              setMessages(prev => prev.map(msg => 
+                msg.id === responseId ? { ...msg, text: syncText } : msg
+              ));
+              break;
+            }
+          }
+        } catch (mErr) {
+          console.warn(`Model ${modelName} failed in ChatInterface, trying fallback...`, mErr);
+        }
       }
 
     } catch (error) {
