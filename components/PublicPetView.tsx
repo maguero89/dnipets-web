@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pet, UserProfile, HealthRecord } from '../types';
 import { petService } from '../services/petService';
+import { getPetPhotoUrl } from '../utils/imageUtils';
 import { 
   ShieldCheck, 
   AlertTriangle, 
@@ -17,6 +18,7 @@ interface Props {
 export const PublicPetView: React.FC<Props> = ({ pet, owner }) => {
   const [vacunas, setVacunas] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species);
 
   useEffect(() => {
     // Usamos la tabla health_records que me compartiste
@@ -82,7 +84,7 @@ export const PublicPetView: React.FC<Props> = ({ pet, owner }) => {
           {/* FOTO IZQUIERDA */}
           <div className="w-64 h-64 shrink-0">
             <img 
-              src={pet.photoUrl} 
+              src={displayPhoto} 
               className="w-full h-full object-cover rounded-[2rem] border-4 border-slate-100 shadow-sm" 
               alt={pet.name} 
             />

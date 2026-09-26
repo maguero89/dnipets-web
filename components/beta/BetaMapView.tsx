@@ -25,6 +25,7 @@ import {
   getDeterministicOffset
 } from '../../utils/leafletIcons';
 import { formatWhatsAppPhone } from '../../utils/phoneUtils';
+import { getPetPhotoUrl } from '../../utils/imageUtils';
 
 L.Marker.prototype.options.icon = defaultIcon;
 
@@ -188,8 +189,8 @@ export const BetaMapView: React.FC<BetaMapViewProps> = ({
               <Marker key={pet.id} position={position} icon={iconToUse}>
                 <Popup>
                   <div className="text-center text-slate-900 p-1 min-w-[140px]">
-                    {pet.photoUrl ? (
-                      <img src={pet.photoUrl} alt={pet.name} className="w-12 h-12 rounded-2xl object-cover mx-auto mb-2 shadow-sm border border-slate-100" />
+                    {getPetPhotoUrl(pet.photoUrl, pet.species) ? (
+                      <img src={getPetPhotoUrl(pet.photoUrl, pet.species)} alt={pet.name} className="w-12 h-12 rounded-2xl object-cover mx-auto mb-2 shadow-sm border border-slate-100" />
                     ) : (
                       <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center font-bold text-lg text-slate-400 mx-auto mb-2">
                         {pet.name.charAt(0)}

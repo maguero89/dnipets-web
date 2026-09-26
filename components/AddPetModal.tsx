@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { petService } from '../services/petService';
 import { Pet } from '../types';
 import { X, Save, ShieldAlert, Upload, Loader2 } from 'lucide-react';
+import { getDefaultPetPhoto, getPetPhotoUrl } from '../utils/imageUtils';
 
 interface AddPetModalProps {
   onClose: () => void;
@@ -18,7 +19,7 @@ export const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onAdded }) =>
     sex: 'Macho',
     birthDate: '',
     weight: '',
-    photoUrl: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=600', // Default placeholder
+    photoUrl: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +39,7 @@ export const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onAdded }) =>
         birthDate: formData.birthDate,
         weight: parseFloat(formData.weight) || 0,
         ownerName: user ? `${user.firstName} ${user.lastName}`.trim() || 'Dueño' : 'Dueño',
-        photoUrl: formData.photoUrl,
+        photoUrl: getPetPhotoUrl(formData.photoUrl, formData.species),
         status: 'safe',
       };
 
@@ -140,13 +141,18 @@ export const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onAdded }) =>
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Foto de la Mascota</label>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
+              {formData.photoUrl && (
+                <div className="w-24 h-24 mx-auto rounded-2xl overflow-hidden border-2 border-[#00d1c6] shadow-md bg-[#2a2550]">
+                  <img src={formData.photoUrl} alt="Vista previa" className="w-full h-full object-cover" />
+                </div>
+              )}
               <label className="cursor-pointer bg-[#2a2550] border border-[#00d1c6]/30 hover:bg-[#00d1c6]/10 p-4 rounded-2xl text-white flex items-center justify-center gap-2 text-xs font-bold transition-all">
                 {uploadingPhoto ? <Loader2 className="animate-spin text-[#00d1c6]" size={18} /> : <Upload size={18} className="text-[#00d1c6]" />}
-                <span>{uploadingPhoto ? 'Procesando Foto de iPhone/Galería...' : 'Subir Foto desde Galería / Cámara'}</span>
+                <span>{uploadingPhoto ? 'Procesando Foto...' : formData.photoUrl ? 'Cambiar Foto' : 'Subir Foto desde Galería / Cámara'}</span>
                 <input 
                   type="file" 
-                  accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" 
+                  accept="image/*" 
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {

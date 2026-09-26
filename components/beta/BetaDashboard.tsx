@@ -3,6 +3,7 @@ import { UserProfile, Pet } from '../../types';
 import { petService } from '../../services/petService';
 import { ChevronRight, Home, Map, Heart, User, Loader2, Plus, Bot } from 'lucide-react';
 import { PawPrintBackground } from '../PawPrintBackground';
+import { getPetPhotoUrl } from '../../utils/imageUtils';
 
 interface BetaDashboardProps {
   profile: UserProfile;
@@ -106,8 +107,8 @@ export const BetaDashboard: React.FC<BetaDashboardProps> = ({
                   <div className={`w-16 h-16 rounded-xl overflow-hidden border-2 ${
                     pet.status === 'lost' ? 'border-red-500' : pet.status === 'adoption' ? 'border-purple-500' : 'border-gray-100'
                   }`}>
-                    {pet.photoUrl ? (
-                      <img src={pet.photoUrl} alt={pet.name} className="w-full h-full object-cover" />
+                    {getPetPhotoUrl(pet.photoUrl, pet.species) ? (
+                      <img src={getPetPhotoUrl(pet.photoUrl, pet.species)} alt={pet.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xl">
                         {pet.name.charAt(0)}

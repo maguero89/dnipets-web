@@ -5,10 +5,12 @@ import { DniPetsLogo } from './ui/DniPetsLogo';
 import { RealIdCard } from './ui/RealIdCard';
 import { petService } from '../services/petService';
 import { formatWhatsAppPhone } from '../utils/phoneUtils';
+import { getPetPhotoUrl } from '../utils/imageUtils';
 
 export const PublicPetProfile = ({ pet, owner, onClose, isExternal = false }: { pet: Pet, owner: UserProfile, onClose?: () => void, isExternal?: boolean }) => {
     const isLost = pet.status === 'lost';
     const isAdoption = pet.status === 'adoption';
+    const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species);
 
     const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
     const [loadingHealth, setLoadingHealth] = useState(true);
@@ -123,7 +125,7 @@ export const PublicPetProfile = ({ pet, owner, onClose, isExternal = false }: { 
                             <p className="text-white/90 text-sm font-bold uppercase mt-1">Ayúdanos a encontrarlo</p>
                         </div>
                         <div className="aspect-square relative bg-gray-100">
-                            {pet.photoUrl && <img src={pet.photoUrl} className="w-full h-full object-cover" alt={pet.name} />}
+                            {displayPhoto && <img src={displayPhoto} className="w-full h-full object-cover" alt={pet.name} />}
                         </div>
                         <div className="p-6 text-center">
                             <h2 className="text-4xl font-black text-brand-navy mb-2 uppercase tracking-tight">{pet.name}</h2>
@@ -163,7 +165,7 @@ export const PublicPetProfile = ({ pet, owner, onClose, isExternal = false }: { 
                             <p className="text-white/90 text-sm font-bold uppercase mt-1">Adopción Responsable</p>
                         </div>
                         <div className="aspect-square relative bg-gray-100">
-                            {pet.photoUrl && <img src={pet.photoUrl} className="w-full h-full object-cover" alt={pet.name} />}
+                            {displayPhoto && <img src={displayPhoto} className="w-full h-full object-cover" alt={pet.name} />}
                             <div className="absolute bottom-4 right-4 bg-white p-2 rounded-full shadow-lg">
                                 <Heart className="text-purple-600 fill-purple-600 animate-pulse" size={32} />
                             </div>

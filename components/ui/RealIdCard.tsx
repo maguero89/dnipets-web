@@ -3,10 +3,12 @@ import { Maximize2 } from 'lucide-react';
 import { Pet } from '../../types';
 import { DniPetsLogo } from './DniPetsLogo';
 import { PawPrintBackground } from '../PawPrintBackground';
+import { getPetPhotoUrl } from '../../utils/imageUtils';
 
 export const RealIdCard = ({ pet, onQrClick }: { pet: Pet, onQrClick?: () => void }) => {
     const isLost = pet.status === 'lost';
     const isAdoption = pet.status === 'adoption';
+    const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species);
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://dnipets.com';
     const qrData = `${origin}/?p=${pet.id}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
@@ -14,8 +16,8 @@ export const RealIdCard = ({ pet, onQrClick }: { pet: Pet, onQrClick?: () => voi
     return (
         <div className={`relative w-full aspect-[1.58/1] rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 bg-white ${isLost ? 'ring-4 ring-red-600' : isAdoption ? 'ring-4 ring-purple-500' : 'ring-1 ring-gray-200'}`}>
             <div className="absolute inset-0 bg-white z-0">
-                {pet.photoUrl && (
-                    <img src={pet.photoUrl} className="absolute inset-0 w-full h-full object-cover opacity-10 blur-sm scale-110" alt="" />
+                {displayPhoto && (
+                    <img src={displayPhoto} className="absolute inset-0 w-full h-full object-cover opacity-10 blur-sm scale-110" alt="" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/70 to-white/40" />
                 <div className="absolute right-[-15%] bottom-[-15%] w-[60%] opacity-[0.08] rotate-12 pointer-events-none">
@@ -26,8 +28,8 @@ export const RealIdCard = ({ pet, onQrClick }: { pet: Pet, onQrClick?: () => voi
             <div className="relative p-4 h-full flex flex-row gap-3 z-10">
                 <div className="w-[32%] h-full flex flex-col justify-center">
                     <div className="aspect-[3/4] rounded-lg overflow-hidden border-2 border-white shadow-md bg-gray-100">
-                        {pet.photoUrl ? (
-                            <img src={pet.photoUrl} className="w-full h-full object-cover" alt={pet.name} />
+                        {displayPhoto ? (
+                            <img src={displayPhoto} className="w-full h-full object-cover" alt={pet.name} />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400 font-bold text-xs">
                                 Sin foto

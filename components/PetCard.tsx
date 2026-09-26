@@ -3,6 +3,7 @@ import { Pet } from '../types';
 import { QrCode, ExternalLink, Activity, Syringe } from 'lucide-react';
 import { QRCodeViewer } from './QRCodeViewer';
 import { MedicalHistoryModal } from './MedicalHistoryModal';
+import { getPetPhotoUrl } from '../utils/imageUtils';
 
 interface PetCardProps {
   pet: Pet;
@@ -11,14 +12,15 @@ interface PetCardProps {
 export const PetCard: React.FC<PetCardProps> = ({ pet }) => {
   const [showQR, setShowQR] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
+  const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species);
 
   return (
     <>
       <div className="bg-[#2a2550] border border-white/5 rounded-[2rem] overflow-hidden flex flex-col group hover:border-[#00d1c6]/30 transition-colors">
         <div className="relative h-48 sm:h-56 overflow-hidden bg-[#1c183d]">
-          {pet.photoUrl ? (
+          {displayPhoto ? (
             <img 
-              src={pet.photoUrl} 
+              src={displayPhoto} 
               alt={pet.name} 
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />

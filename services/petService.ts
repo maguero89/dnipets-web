@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 // Mantenemos tus tipos para que el resto de la app siga funcionando
 import { Pet, HealthRecord, UserProfile, ContactMessage, Establishment } from '../types';
-import { processImageFile, dataURLtoBlob } from '../utils/imageUtils';
+import { processImageFile, dataURLtoBlob, getPetPhotoUrl } from '../utils/imageUtils';
 
 // Tus credenciales oficiales de Supabase
 const SUPABASE_URL = 'https://totbrjiujqnnybgvhdaz.supabase.co';
@@ -267,7 +267,7 @@ class PetService {
       birthDate: p.birth_date,
       weight: p.weight,
       ownerName: p.owner_name,
-      photoUrl: p.photo_url,
+      photoUrl: getPetPhotoUrl(p.photo_url, p.species),
       status: p.status,
       notes: p.notes,
       chipId: p.chip_id,
@@ -580,7 +580,7 @@ class PetService {
 
       // 2. Intentar subir la imagen comprimida a Supabase Storage
       try {
-        const blob = dataURLtoBlob(compressedDataUrl);
+        const blob = await dataURLtoBlob(compressedDataUrl);
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
         const filePath = `pets/${fileName}`;
 
@@ -623,7 +623,7 @@ class PetService {
   async uploadFile(file: File, folder: string = 'health-records'): Promise<string> {
     try {
       const compressedDataUrl = await processImageFile(file);
-      const blob = dataURLtoBlob(compressedDataUrl);
+      const blob = await dataURLtoBlob(compressedDataUrl);
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
       const filePath = `${folder}/${fileName}`;
 

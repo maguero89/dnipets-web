@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Camera, Image as ImageIcon, X } from 'lucide-react';
 import { Pet } from '../../types';
 import { petService } from '../../services/petService';
+import { getPetPhotoUrl } from '../../utils/imageUtils';
 
 interface BetaAddPetProps {
   onBack: () => void;
@@ -53,7 +54,7 @@ export const BetaAddPet: React.FC<BetaAddPetProps> = ({ onBack, onSaved }) => {
         birthDate: formData.birthDate,
         weight: parseFloat(formData.weight) || 0,
         ownerName: user ? `${user.firstName} ${user.lastName}`.trim() || 'Dueño' : 'Dueño',
-        photoUrl: formData.photoUrl || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=600',
+        photoUrl: getPetPhotoUrl(formData.photoUrl, formData.species),
         status: 'safe',
       };
 
@@ -105,7 +106,7 @@ export const BetaAddPet: React.FC<BetaAddPetProps> = ({ onBack, onSaved }) => {
               <div className="relative">
                 <input 
                   type="file" 
-                  accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" 
+                  accept="image/*" 
                   onChange={handleFileChange}
                   disabled={uploadingPhoto}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
