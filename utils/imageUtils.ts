@@ -18,9 +18,12 @@ export function getDefaultPetPhoto(species?: string): string {
  * retorna la foto por defecto del gato.
  */
 export function getPetPhotoUrl(photoUrl?: string | null, species?: string, petId?: string): string {
-  // Asignación directa de la foto oficial de Tilcara si tiene la foto por defecto
+  // Asignación directa de las fotos oficiales de Tilcara y Pizza si tienen la foto por defecto
   if (petId === 'd68945cd-1857-46cf-aada-53799d5c9e55' && (!photoUrl || photoUrl.includes('unsplash.com'))) {
     return 'https://www.dnipets.com/tilcara.png';
+  }
+  if (petId === '4854dbba-dffb-446b-9be2-89d1374bfe06' && (!photoUrl || photoUrl.includes('unsplash.com'))) {
+    return 'https://www.dnipets.com/pizza.png';
   }
 
   const s = (species || '').toLowerCase();
