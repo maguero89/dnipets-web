@@ -18,7 +18,7 @@ interface Props {
 export const PublicPetView: React.FC<Props> = ({ pet, owner }) => {
   const [vacunas, setVacunas] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species);
+  const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species, pet.id);
 
   useEffect(() => {
     // Usamos la tabla health_records que me compartiste

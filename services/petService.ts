@@ -267,7 +267,7 @@ class PetService {
       birthDate: p.birth_date,
       weight: p.weight,
       ownerName: p.owner_name,
-      photoUrl: getPetPhotoUrl(p.photo_url, p.species),
+      photoUrl: getPetPhotoUrl(p.photo_url, p.species, p.id),
       status: p.status,
       notes: p.notes,
       chipId: p.chip_id,

@@ -8,7 +8,7 @@ import { getPetPhotoUrl } from '../../utils/imageUtils';
 export const RealIdCard = ({ pet, onQrClick }: { pet: Pet, onQrClick?: () => void }) => {
     const isLost = pet.status === 'lost';
     const isAdoption = pet.status === 'adoption';
-    const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species);
+    const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species, pet.id);
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://dnipets.com';
     const qrData = `${origin}/?p=${pet.id}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;

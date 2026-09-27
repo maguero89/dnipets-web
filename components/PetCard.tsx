@@ -12,7 +12,7 @@ interface PetCardProps {
 export const PetCard: React.FC<PetCardProps> = ({ pet }) => {
   const [showQR, setShowQR] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
-  const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species);
+  const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species, pet.id);
 
   return (
     <>

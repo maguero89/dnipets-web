@@ -10,7 +10,7 @@ import { getPetPhotoUrl } from '../utils/imageUtils';
 export const PublicPetProfile = ({ pet, owner, onClose, isExternal = false }: { pet: Pet, owner: UserProfile, onClose?: () => void, isExternal?: boolean }) => {
     const isLost = pet.status === 'lost';
     const isAdoption = pet.status === 'adoption';
-    const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species);
+    const displayPhoto = getPetPhotoUrl(pet.photoUrl, pet.species, pet.id);
 
     const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
     const [loadingHealth, setLoadingHealth] = useState(true);

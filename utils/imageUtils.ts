@@ -17,7 +17,12 @@ export function getDefaultPetPhoto(species?: string): string {
  * Si la foto es nula, vacía o es el perro por defecto pero la especie es un gato,
  * retorna la foto por defecto del gato.
  */
-export function getPetPhotoUrl(photoUrl?: string | null, species?: string): string {
+export function getPetPhotoUrl(photoUrl?: string | null, species?: string, petId?: string): string {
+  // Asignación directa de la foto oficial de Tilcara si tiene la foto por defecto
+  if (petId === 'd68945cd-1857-46cf-aada-53799d5c9e55' && (!photoUrl || photoUrl.includes('unsplash.com'))) {
+    return 'https://www.dnipets.com/tilcara.png';
+  }
+
   const s = (species || '').toLowerCase();
   const isCat = s === 'cat' || s === 'gato' || s === 'felina' || s === 'felino';
 
