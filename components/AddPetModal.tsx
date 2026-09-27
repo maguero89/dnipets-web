@@ -184,11 +184,11 @@ export const AddPetModal: React.FC<AddPetModalProps> = ({ onClose, onAdded }) =>
 
           <button 
             type="submit" 
-            disabled={loading}
-            className="w-full bg-[#00d1c6] hover:bg-[#00b8ae] text-[#0d0f35] font-black p-5 rounded-2xl shadow-xl shadow-[#00d1c6]/10 transition-all uppercase tracking-widest text-sm mt-6 flex items-center justify-center gap-2"
+            disabled={loading || uploadingPhoto}
+            className="w-full bg-[#00d1c6] hover:bg-[#00b8ae] disabled:opacity-50 text-[#0d0f35] font-black p-5 rounded-2xl shadow-xl shadow-[#00d1c6]/10 transition-all uppercase tracking-widest text-sm mt-6 flex items-center justify-center gap-2"
           >
-            {loading ? <span className="animate-spin h-5 w-5 border-2 border-[#0d0f35] border-t-transparent rounded-full"></span> : <Save size={18} />}
-            {loading ? 'Guardando...' : 'Crear DNI y QR'}
+            {loading || uploadingPhoto ? <span className="animate-spin h-5 w-5 border-2 border-[#0d0f35] border-t-transparent rounded-full"></span> : <Save size={18} />}
+            {loading ? 'Guardando...' : uploadingPhoto ? 'Procesando Foto...' : 'Crear DNI y QR'}
           </button>
           
           <div className="flex items-center gap-2 p-3 bg-indigo-500/10 rounded-xl">

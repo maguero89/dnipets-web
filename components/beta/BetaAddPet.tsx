@@ -231,10 +231,10 @@ export const BetaAddPet: React.FC<BetaAddPetProps> = ({ onBack, onSaved }) => {
           <div className="mt-auto pt-6 pb-8">
             <button 
               type="submit" 
-              disabled={loading}
+              disabled={loading || uploadingPhoto}
               className="w-full bg-[#00D1C6] hover:bg-[#00b8ae] text-white font-bold p-4 rounded-xl transition-colors disabled:opacity-50"
             >
-              {loading ? 'Guardando...' : 'Guardar Mascota'}
+              {loading ? 'Guardando...' : uploadingPhoto ? 'Procesando Foto...' : 'Guardar Mascota'}
             </button>
           </div>
 

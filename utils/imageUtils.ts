@@ -21,7 +21,7 @@ export function getPetPhotoUrl(photoUrl?: string | null, species?: string): stri
   const s = (species || '').toLowerCase();
   const isCat = s === 'cat' || s === 'gato' || s === 'felina' || s === 'felino';
 
-  if (!photoUrl || photoUrl.trim() === '') {
+  if (!photoUrl || photoUrl.trim() === '' || photoUrl.startsWith('blob:')) {
     return getDefaultPetPhoto(species);
   }
 
@@ -35,17 +35,17 @@ export function getPetPhotoUrl(photoUrl?: string | null, species?: string): stri
 
 /**
  * Convierte y comprime cualquier archivo de imagen (incluyendo fotos de Motorola/Xiaomi/Redmi 50MP/108MP, HEIC de iPhone o PNGs)
- * a un DataURL en formato JPEG de resolución optimizada (máx 1000px).
- * Utiliza createImageBitmap para evitar problemas de memoria en dispositivos móviles Motorola/Android.
+ * a un DataURL en formato JPEG de resolución optimizada (máx 600px por defecto, ~40KB-70KB).
+ * Utiliza createImageBitmap para evitar problemas de memoria en dispositivos móviles Android/iOS.
  */
-export async function processImageFile(file: File, maxWidth: number = 1000, quality: number = 0.85): Promise<string> {
+export async function processImageFile(file: File, maxWidth: number = 600, quality: number = 0.75): Promise<string> {
   if (!file) throw new Error("No se seleccionó ningún archivo de imagen.");
 
-  // 1. Método preferido para Android (Motorola/Xiaomi/Samsung): createImageBitmap (rendimiento nativo y bajo consumo RAM)
+  // 1. Método preferido para Android/iOS: createImageBitmap (rendimiento nativo y bajo consumo RAM)
   if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
     try {
       const bitmap = await createImageBitmap(file);
-      let width = bitmap.width || 800;
+      let width = bitmap.width || 600;
       let height = bitmap.height || 600;
 
       if (width > maxWidth) {
@@ -78,7 +78,7 @@ export async function processImageFile(file: File, maxWidth: number = 1000, qual
 
       img.onload = () => {
         try {
-          let width = img.width || 800;
+          let width = img.width || 600;
           let height = img.height || 600;
 
           if (width > maxWidth) {
@@ -93,7 +93,7 @@ export async function processImageFile(file: File, maxWidth: number = 1000, qual
           const ctx = canvas.getContext('2d');
           if (!ctx) {
             URL.revokeObjectURL(objectUrl);
-            fallbackFileReader(file, resolve, reject);
+            fallbackFileReader(file, maxWidth, quality, resolve, reject);
             return;
           }
 
@@ -107,32 +107,69 @@ export async function processImageFile(file: File, maxWidth: number = 1000, qual
         } catch (canvasErr) {
           console.warn("Error en Canvas resizing, usando fallback FileReader:", canvasErr);
           URL.revokeObjectURL(objectUrl);
-          fallbackFileReader(file, resolve, reject);
+          fallbackFileReader(file, maxWidth, quality, resolve, reject);
         }
       };
 
       img.onerror = (err) => {
         console.warn("Error cargando imageObject, usando fallback FileReader:", err);
         URL.revokeObjectURL(objectUrl);
-        fallbackFileReader(file, resolve, reject);
+        fallbackFileReader(file, maxWidth, quality, resolve, reject);
       };
 
       img.src = objectUrl;
     } catch (e) {
-      fallbackFileReader(file, resolve, reject);
+      fallbackFileReader(file, maxWidth, quality, resolve, reject);
     }
   });
 }
 
-function fallbackFileReader(file: File, resolve: (val: string) => void, reject: (err: any) => void) {
+function fallbackFileReader(
+  file: File, 
+  maxWidth: number, 
+  quality: number, 
+  resolve: (val: string) => void, 
+  reject: (err: any) => void
+) {
   const reader = new FileReader();
-  reader.onerror = (err) => reject(new Error("No se pudo leer el archivo de la galería."));
+  reader.onerror = () => reject(new Error("No se pudo leer el archivo de la galería."));
   reader.onload = (e) => {
-    if (e.target?.result) {
-      resolve(e.target.result as string);
-    } else {
+    const rawDataUrl = e.target?.result as string;
+    if (!rawDataUrl) {
       reject(new Error("No se obtuvo contenido de la imagen."));
+      return;
     }
+    // Intentar comprimir la imagen cargada por FileReader
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let width = img.width || 600;
+        let height = img.height || 600;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+          return;
+        }
+      } catch (err) {
+        console.warn("Error comprimiendo DataURL en fallback:", err);
+      }
+      resolve(rawDataUrl);
+    };
+    img.onerror = () => resolve(rawDataUrl);
+    img.src = rawDataUrl;
   };
   reader.readAsDataURL(file);
 }

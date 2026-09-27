@@ -575,14 +575,14 @@ class PetService {
 
   async uploadPetPhoto(file: File): Promise<string> {
     try {
-      // 1. Procesar y convertir la foto (soporte iPhone / HEIC / compresión)
-      const compressedDataUrl = await processImageFile(file, 1000, 0.85);
+      // 1. Procesar y convertir la foto (soporte iPhone / HEIC / compresión ligera ~50KB)
+      const compressedDataUrl = await processImageFile(file, 600, 0.75);
 
-      // 2. Intentar subir la imagen comprimida a Supabase Storage
+      // 2. Intentar subir la imagen comprimida a Supabase Storage si el bucket existe
       try {
         const blob = await dataURLtoBlob(compressedDataUrl);
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
-        const filePath = `pets/${fileName}`;
+        const filePath = `${fileName}`;
 
         // Intentar bucket 'pets' primero o 'health-records' como respaldo
         let uploadBucket = 'pets';
@@ -590,7 +590,7 @@ class PetService {
           .from('pets')
           .upload(filePath, blob, { contentType: 'image/jpeg', cacheControl: '3600', upsert: true });
 
-        if (error && error.message.includes('not found')) {
+        if (error && (error.message.includes('not found') || error.message.includes('security'))) {
           uploadBucket = 'health-records';
           const res = await supabase.storage
             .from('health-records')
@@ -612,7 +612,7 @@ class PetService {
         console.warn("Supabase Storage pet upload failed, fallback to DataURL:", storageErr);
       }
 
-      // Si falla la subida a Supabase o no hay bucket, retornar el DataURL comprimido (persistente y universal)
+      // Si falla la subida a Supabase o no hay bucket, retornar el DataURL comprimido (persistente, liviano y universal)
       return compressedDataUrl;
     } catch (err) {
       console.error("Error procesando foto de mascota:", err);
